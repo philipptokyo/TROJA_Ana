@@ -6,9 +6,6 @@
  **/
 
 
-
-
-
 #include "main.h"
 
 #include "LibPerso.h"
@@ -43,13 +40,23 @@ Int_t main(Int_t argc, char **argv){
   
   
   
-  //define some constants
-  //nuclear masses in MeV/u
-//  const Float_t massTarget = 1875.628; //deuteron
-  const Float_t massProj = 122855.922; //132Sn
-  const Float_t massLight = 938.279;   //light ejectile, proton
-  const Float_t massHeavy = 123793.125;//heavy ejectile, 133Sn
-
+  // define some constants
+  
+  // nuclear masses in MeV/u
+  /// masses should be defined in an external file!
+  // const Float_t massTarget = 1875.628; // deuteron
+  const Float_t massProj = 122855.922;   // 132Sn
+  const Float_t massLight = 938.279;     // light ejectile, proton
+  const Float_t massHeavy = 123793.125;  // heavy ejectile, 133Sn
+  
+  // beam energy
+  // should be written from root file
+  Float_t energyKinProj = 10.0*132.0;  // 10 MeV/u
+ 
+  
+ 
+ 
+ 
   
   TFile* infile = TFile::Open(argv[1],"read");
   
@@ -58,19 +65,19 @@ Int_t main(Int_t argc, char **argv){
    return 0;
   }
  
-//  TTree* tree=(TTree*)infile->Get("troja");
-  TTree* tree=(TTree*)infile->Get("events"); //simulation input
+  TTree* tree=(TTree*)infile->Get("troja");
+  //TTree* tree=(TTree*)infile->Get("events"); //simulation input
   if(!tree){
-    //cout << "TTree 'troja' not found!" << endl;
-    cout << "TTree 'events' not found!" << endl;
+    cout << "TTree 'troja' not found!" << endl;
+    //cout << "TTree 'events' not found!" << endl;
     return 0;
   }
 
   
   
-  // at the moment, only 132Sn (d,p) is implemented
-  // hence, 132Sn momentum is fix
-  Float_t energyKinProj = 10.0*132.0; // 10 MeV/u
+  // at the moment:
+  //  only 132Sn (d,p) is implemented
+  // 132Sn momentum/energy is fix
   Float_t gammaProj = (energyKinProj)/massProj + 1.0;
   //Float_t betaProj = TMath::Sqrt(1.0-(1.0/(gammaProj*gammaProj))); //just for cross checking
   Float_t momentumProj = massProj*TMath::Sqrt(gammaProj*gammaProj-1.0); 
@@ -83,36 +90,22 @@ Int_t main(Int_t argc, char **argv){
   lProj.SetPxPyPzE(0.0, 0.0, momentumProj, energyTotProj);
  
  
-  //TLorentzVector lTarget;
-  //lTarget.SetPxPyPzE(0.0, 0.0, 0.0, massTarget);
-   
-  //cout << "Momentum " << lProj.P() << ", kin energy " << lProj.E() - massProj << ", total energy " << lProj.E() << endl;
-
-
-
-
 
 
   
   // Declaration of leaf types
-//  Double_t        eventNumber;
-  Int_t        eventNumber;
-  Double_t        energy;
-//  Double_t        energyLoss;
-//  Double_t        energyTotal;
-//  Double_t        x;
-//  Double_t        y;
-//  Double_t        z;
+//  Int_t        eventNumber; //simulation input
+//  Double_t        energy;   //simulation input
+  Double_t        eventNumber;
+  Double_t        energyLoss;
+  Double_t        energyTotal;
   Double_t        theta;
   Double_t        phi;
   
+//  tree->SetBranchAddress("energy", &energy); //simulation input
   tree->SetBranchAddress("eventNumber", &eventNumber);
-  tree->SetBranchAddress("energy", &energy);
-//  tree->SetBranchAddress("energyLoss", &energyLoss);
-//  tree->SetBranchAddress("energyTotal", &energyTotal);
-//  tree->SetBranchAddress("x", &x);
-//  tree->SetBranchAddress("y", &y);
-//  tree->SetBranchAddress("z", &z);
+  tree->SetBranchAddress("energyLoss", &energyLoss);
+  tree->SetBranchAddress("energyTotal", &energyTotal);
   tree->SetBranchAddress("theta", &theta);
   tree->SetBranchAddress("phi", &phi); 
 
@@ -131,15 +124,15 @@ Int_t main(Int_t argc, char **argv){
     // take only events in backward direction
     // in very forward direction are usually punch-troughs of protons through the detector
 
-//    if(theta<90.){
-//      continue;
-//    }
+    if(theta<90.){
+      continue;
+    }
 
-//    theta/=180.0/TMath::Pi(); //this is important if simulation output is used
+    theta/=180.0/TMath::Pi(); //this is important if simulation output is used
 
-    // get total energy and momentum
-    //Float_t energyKinLight = energyLoss + energyTotal; //kinetic energy of proton
-    Float_t energyKinLight = energy; //kinetic energy of proton
+    // get total energy and momentum of the light ejectile
+    Float_t energyKinLight = energyLoss + energyTotal; //kinetic energy of proton
+    //Float_t energyKinLight = energy; //kinetic energy of proton //simulation input
     Float_t gammaLight = energyKinLight/massLight+1.0;
     Float_t energyTotLight = gammaLight*massLight;
     Float_t momentumLight = massLight*TMath::Sqrt(gammaLight*gammaLight-1.0);
@@ -152,6 +145,8 @@ Int_t main(Int_t argc, char **argv){
     TLorentzVector lLight;
     lLight.SetPxPyPzE(vLight.X(), vLight.Y(), vLight.Z(), energyTotLight);
     //cout << "Light ejectile momentum " << lLight.Pt() << ", kin energy " << lLight.E()-massLight << ", total energy " << lLight.E() << endl;
+
+
 
     //calculate momentum vector of heavy ejectile
     TVector3 vHeavy=vProj;
@@ -171,19 +166,18 @@ Int_t main(Int_t argc, char **argv){
     //cout << "Heavy ejectile momentum " << momentumHeavy << ", kin energy " << energyTotHeavy-massHeavy << ", total energ " << energyTotHeavy << endl;
     //cout << endl; 
     
-    //get the missing mass
+
+
+    //get the excitation energy from the missing mass
     //TLorentzVector lMiss = lHeavy - lLight - lProj;
-    //TLorentzVector lMiss = lHeavy;
-    
     
     //cout << "Missing mass " << lMiss.E() << endl;
     
-    //Float_t miss = lLight.E() + lProj.E() - lHeavy.E();
-    //Float_t miss = lHeavy.E() + lLight.E() - lProj.E() ;
     Float_t miss = (lHeavy.E()-massHeavy) + (lLight.E()-massLight) - (lProj.E()-massProj) ;
 
     //cout << "Missing mass " << miss << endl;
 
+   
     hMiss->Fill(miss);
     //hMissTheta->Fill(vLight.Theta()*180.0/TMath::Pi(), miss);
   
