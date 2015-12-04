@@ -25,7 +25,7 @@ Int_t main(Int_t argc, char **argv){
   
   
   // if root shall stop the program before it finished, comment this in
-//  TApplication *theApp=new TApplication("theApp",  0, 0);
+  TApplication *theApp=new TApplication("theApp",  0, 0);
   
   
   cout << "Welcome to troja analyzer" << endl;
@@ -43,25 +43,162 @@ Int_t main(Int_t argc, char **argv){
   
   
   
+  //define some constants
+  //nuclear masses in MeV/u
+//  const Float_t massTarget = 1875.628; //deuteron
+  const Float_t massProj = 122855.922; //132Sn
+  const Float_t massLight = 938.279;   //light ejectile, proton
+  const Float_t massHeavy = 123793.125;//heavy ejectile, 133Sn
+
+  
   TFile* infile = TFile::Open(argv[1],"read");
   
   if(!infile){
-    
    cout << "Rootfile not found!" << endl;
    return 0;
-  
   }
  
- 
+//  TTree* tree=(TTree*)infile->Get("troja");
+  TTree* tree=(TTree*)infile->Get("events"); //simulation input
+  if(!tree){
+    //cout << "TTree 'troja' not found!" << endl;
+    cout << "TTree 'events' not found!" << endl;
+    return 0;
+  }
 
   
- 
- 
   
+  // at the moment, only 132Sn (d,p) is implemented
+  // hence, 132Sn momentum is fix
+  Float_t energyKinProj = 10.0*132.0; // 10 MeV/u
+  Float_t gammaProj = (energyKinProj)/massProj + 1.0;
+  //Float_t betaProj = TMath::Sqrt(1.0-(1.0/(gammaProj*gammaProj))); //just for cross checking
+  Float_t momentumProj = massProj*TMath::Sqrt(gammaProj*gammaProj-1.0); 
+  Float_t energyTotProj = massProj*gammaProj; //total energy
+  
+  //cout << "Incoming momentum " << momentumProj << ", kin energy " << energyKinProj << ", total energy " << energyTotProj << ", beta " << betaProj << ", gamma " << gammaProj << endl;
+   
+  TVector3 vProj(0.0, 0.0, momentumProj); 
+  TLorentzVector lProj;
+  lProj.SetPxPyPzE(0.0, 0.0, momentumProj, energyTotProj);
+ 
+ 
+  //TLorentzVector lTarget;
+  //lTarget.SetPxPyPzE(0.0, 0.0, 0.0, massTarget);
+   
+  //cout << "Momentum " << lProj.P() << ", kin energy " << lProj.E() - massProj << ", total energy " << lProj.E() << endl;
+
+
+
+
+
+
+  
+  // Declaration of leaf types
+//  Double_t        eventNumber;
+  Int_t        eventNumber;
+  Double_t        energy;
+//  Double_t        energyLoss;
+//  Double_t        energyTotal;
+//  Double_t        x;
+//  Double_t        y;
+//  Double_t        z;
+  Double_t        theta;
+  Double_t        phi;
+  
+  tree->SetBranchAddress("eventNumber", &eventNumber);
+  tree->SetBranchAddress("energy", &energy);
+//  tree->SetBranchAddress("energyLoss", &energyLoss);
+//  tree->SetBranchAddress("energyTotal", &energyTotal);
+//  tree->SetBranchAddress("x", &x);
+//  tree->SetBranchAddress("y", &y);
+//  tree->SetBranchAddress("z", &z);
+  tree->SetBranchAddress("theta", &theta);
+  tree->SetBranchAddress("phi", &phi); 
+
+
+
+  TH1F* hMiss=new TH1F("hMiss", "Missing Mass", 1000, -20.0, 20.0);
+  //TH2F* hMissTheta=new TH2F("hMissTheta", "Missing mass vs. theta proton", 360,0,180,1000,-20,20);
+
+  
+  Int_t nevents=tree->GetEntries();
+  cout << "Number of entries found in tree: " << nevents << endl;
+  
+  for(Int_t e=0; e<nevents; e++){
+    tree->GetEvent(e);
+
+    // take only events in backward direction
+    // in very forward direction are usually punch-troughs of protons through the detector
+
+//    if(theta<90.){
+//      continue;
+//    }
+
+//    theta/=180.0/TMath::Pi(); //this is important if simulation output is used
+
+    // get total energy and momentum
+    //Float_t energyKinLight = energyLoss + energyTotal; //kinetic energy of proton
+    Float_t energyKinLight = energy; //kinetic energy of proton
+    Float_t gammaLight = energyKinLight/massLight+1.0;
+    Float_t energyTotLight = gammaLight*massLight;
+    Float_t momentumLight = massLight*TMath::Sqrt(gammaLight*gammaLight-1.0);
+
+    //cout << "Light ejectile momentum " << momentumLight << ", kin energy " << energyKinLight << ", gamma " << gammaLight << ", theta " << theta*180.0/TMath::Pi() << ", phi " << phi << endl;
+
+    TVector3 vLight(0.0, 0.0, 0.0); //momentum of proton
+    vLight.SetMagThetaPhi(momentumLight, theta, phi);
+
+    TLorentzVector lLight;
+    lLight.SetPxPyPzE(vLight.X(), vLight.Y(), vLight.Z(), energyTotLight);
+    //cout << "Light ejectile momentum " << lLight.Pt() << ", kin energy " << lLight.E()-massLight << ", total energy " << lLight.E() << endl;
+
+    //calculate momentum vector of heavy ejectile
+    TVector3 vHeavy=vProj;
+    vHeavy-=vLight;
+
+    Float_t momentumHeavy = vHeavy.Mag();
+    
+    Float_t gammaHeavy = TMath::Sqrt((momentumHeavy*momentumHeavy)/(massHeavy*massHeavy)+1.0);
+    //Float_t energyKinHeavy = (gammaHeavy-1.0)*massHeavy;     
+
+    //generate the Lorentz vector of the outgoing heavy particle
+    Float_t energyTotHeavy = gammaHeavy*massHeavy;
+
+    TLorentzVector lHeavy;
+    lHeavy.SetPxPyPzE(vHeavy.X(), vHeavy.Y(), vHeavy.Z(), energyTotHeavy);
+
+    //cout << "Heavy ejectile momentum " << momentumHeavy << ", kin energy " << energyTotHeavy-massHeavy << ", total energ " << energyTotHeavy << endl;
+    //cout << endl; 
+    
+    //get the missing mass
+    //TLorentzVector lMiss = lHeavy - lLight - lProj;
+    //TLorentzVector lMiss = lHeavy;
+    
+    
+    //cout << "Missing mass " << lMiss.E() << endl;
+    
+    //Float_t miss = lLight.E() + lProj.E() - lHeavy.E();
+    //Float_t miss = lHeavy.E() + lLight.E() - lProj.E() ;
+    Float_t miss = (lHeavy.E()-massHeavy) + (lLight.E()-massLight) - (lProj.E()-massProj) ;
+
+    //cout << "Missing mass " << miss << endl;
+
+    hMiss->Fill(miss);
+    //hMissTheta->Fill(vLight.Theta()*180.0/TMath::Pi(), miss);
+  
+  }
+
+  cout << nevents << " analyzed" << endl;
+ 
+  hMiss->Draw();
+  //hMissTheta->Draw();
+  
+   
   // if histograms shall be plotted, run theApp
   // otherwise program closes
-//  theApp->Run();
-  
+  theApp->Run();
+  //delete theApp;  
   
   return 0;
 }

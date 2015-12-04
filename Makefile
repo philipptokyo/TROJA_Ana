@@ -21,7 +21,7 @@ endif
 
 all: analysis
 
-makeEvents: *.o
+analysis: *.o
 	$(CXX) $^ -o $@ $(LDFLAGS)
 
 %.o: %.cc
