@@ -111,7 +111,8 @@ Int_t main(Int_t argc, char **argv){
 
 
 
-  TH1F* hMiss=new TH1F("hMiss", "Missing Mass", 1000, -20.0, 20.0);
+  //TH1F* hMiss=new TH1F("hMiss", "Missing Mass", 1000, -20.0, 20.0);
+  TH1F* hMiss=new TH1F("hMiss", "Missing Mass", 2000, -10.0, 10.0);
   //TH2F* hMissTheta=new TH2F("hMissTheta", "Missing mass vs. theta proton", 360,0,180,1000,-20,20);
 
   
