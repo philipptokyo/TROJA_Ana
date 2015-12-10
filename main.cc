@@ -33,8 +33,8 @@ Int_t main(Int_t argc, char **argv){
   	cout << argv[i] << endl;
   }
   
-  if(argc!=2){
-  	cout << "Please give 1 input argument: root file with simulated data, e.g. './analysis sim.root' " << endl; 
+  if(argc!=3){
+  	cout << "Please give 2 input argument: root file with simulation input and output, e.g. './analysis troja_input.root troja_output.root' " << endl; 
   	return 0;
   }
   
@@ -58,41 +58,42 @@ Int_t main(Int_t argc, char **argv){
  
  
   
-  TFile* infile = TFile::Open(argv[1],"read");
+  TFile* fileBeam = TFile::Open(argv[1],"read");
   
-  if(!infile){
-   cout << "Rootfile not found!" << endl;
+  if(!fileBeam){
+   cout << "1st root file not found!" << endl;
    return 0;
   }
  
-  TTree* tree=(TTree*)infile->Get("troja");
+  TTree* treeBeam=(TTree*)fileBeam->Get("events");
   //TTree* tree=(TTree*)infile->Get("events"); //simulation input
-  if(!tree){
-    cout << "TTree 'troja' not found!" << endl;
+  if(!treeBeam){
+    cout << "TTree 'events' not found in 1st root file!" << endl;
     //cout << "TTree 'events' not found!" << endl;
     return 0;
   }
 
   
   
-  // at the moment:
-  //  only 132Sn (d,p) is implemented
-  // 132Sn momentum/energy is fix
-  Float_t gammaProj = (energyKinProj)/massProj + 1.0;
-  //Float_t betaProj = TMath::Sqrt(1.0-(1.0/(gammaProj*gammaProj))); //just for cross checking
-  Float_t momentumProj = massProj*TMath::Sqrt(gammaProj*gammaProj-1.0); 
-  Float_t energyTotProj = massProj*gammaProj; //total energy
+  TFile* infile = TFile::Open(argv[2],"read");
   
-  //cout << "Incoming momentum " << momentumProj << ", kin energy " << energyKinProj << ", total energy " << energyTotProj << ", beta " << betaProj << ", gamma " << gammaProj << endl;
-   
-  TVector3 vProj(0.0, 0.0, momentumProj); 
-  TLorentzVector lProj;
-  lProj.SetPxPyPzE(0.0, 0.0, momentumProj, energyTotProj);
+  if(!infile){
+   cout << "2nd root file not found!" << endl;
+   return 0;
+  }
  
- 
+  TTree* tree=(TTree*)infile->Get("troja");
+  //TTree* tree=(TTree*)infile->Get("events"); //simulation input
+  if(!tree){
+    cout << "TTree 'troja' not found in 2nd root file!" << endl;
+    //cout << "TTree 'events' not found!" << endl;
+    return 0;
+  }
 
 
-  
+
+  // Get tree with light particle simulation
+
   // Declaration of leaf types
 //  Int_t        eventNumber; //simulation input
 //  Double_t        energy;   //simulation input
@@ -111,9 +112,59 @@ Int_t main(Int_t argc, char **argv){
 
 
 
+  // Initialize tree with projectile information
+  //Int_t           beamMassNumber;
+  //Int_t           beamChargeNumber;
+  //Float_t         beamEnergy;
+  Float_t         beamX;
+  Float_t         beamY;
+  Float_t         beamZ;
+  Float_t         beamTheta;
+  Float_t         beamPhi;
+
+  //treeBeam->SetBranchAddress("beamMassNumber", &beamMassNumber);
+  //treeBeam->SetBranchAddress("beamChargeNumber", &beamChargeNumber);
+  //treeBeam->SetBranchAddress("beamEnergy", &beamEnergy);
+  treeBeam->SetBranchAddress("beamEnergy", &energyKinProj);
+  treeBeam->SetBranchAddress("beamX", &beamX);
+  treeBeam->SetBranchAddress("beamY", &beamY);
+  treeBeam->SetBranchAddress("beamZ", &beamZ);
+  treeBeam->SetBranchAddress("beamTheta", &beamTheta);
+  treeBeam->SetBranchAddress("beamPhi", &beamPhi);
+
+
+
+
+//  // Projectile data
+//  // at the moment from simulation input
+//  // todo: separate simulation including incoming tracking
+//   
+//  //  only 132Sn (d,p) is implemented
+//  // 132Sn momentum/energy is fix
+//  Float_t gammaProj = (energyKinProj)/massProj + 1.0;
+//  //Float_t betaProj = TMath::Sqrt(1.0-(1.0/(gammaProj*gammaProj))); //just for cross checking
+//  Float_t momentumProj = massProj*TMath::Sqrt(gammaProj*gammaProj-1.0); 
+//  Float_t energyTotProj = massProj*gammaProj; //total energy
+//  
+//  //cout << "Incoming momentum " << momentumProj << ", kin energy " << energyKinProj << ", total energy " << energyTotProj << ", beta " << betaProj << ", gamma " << gammaProj << endl;
+//   
+//  TVector3 vProj(0.0, 0.0, momentumProj); 
+//  TLorentzVector lProj;
+//  lProj.SetPxPyPzE(0.0, 0.0, momentumProj, energyTotProj);
+
+
+
+
+
+
   //TH1F* hMiss=new TH1F("hMiss", "Missing Mass", 1000, -20.0, 20.0);
   TH1F* hMiss=new TH1F("hMiss", "Missing Mass", 2000, -10.0, 10.0);
   //TH2F* hMissTheta=new TH2F("hMissTheta", "Missing mass vs. theta proton", 360,0,180,1000,-20,20);
+
+
+
+
+
 
   
   Int_t nevents=tree->GetEntries();
@@ -121,6 +172,40 @@ Int_t main(Int_t argc, char **argv){
   
   for(Int_t e=0; e<nevents; e++){
     tree->GetEvent(e);
+    treeBeam->GetEvent(e); // todo: make tree friend instead
+
+
+    // projectile kinematics
+
+    energyKinProj*=132.0; // todo: should be massProj
+    // Projectile data
+    // at the moment from simulation input
+    // todo: separate simulation including incoming tracking
+     
+    //  only 132Sn (d,p) is implemented
+    // 132Sn momentum/energy is fix
+    Float_t gammaProj = (energyKinProj)/massProj + 1.0;
+    //Float_t betaProj = TMath::Sqrt(1.0-(1.0/(gammaProj*gammaProj))); //just for cross checking
+    Float_t momentumProj = massProj*TMath::Sqrt(gammaProj*gammaProj-1.0); 
+    Float_t energyTotProj = massProj*gammaProj; //total energy
+    
+    //cout << "Incoming momentum " << momentumProj << ", kin energy " << energyKinProj << ", total energy " << energyTotProj << ", beta " << betaProj << ", gamma " << gammaProj << endl;
+     
+    TVector3 vProj(0.0, 0.0, momentumProj); 
+    vProj.SetMagThetaPhi(momentumProj, beamTheta, beamPhi); // comment out this line to see the effect of no beam profile correction
+    TLorentzVector lProj;
+    //lProj.SetPxPyPzE(0.0, 0.0, momentumProj, energyTotProj);
+    lProj.SetPxPyPzE(vProj.X(), vProj.Y(), vProj.Z(), energyTotProj);
+
+
+
+
+
+
+
+
+
+    // light ejectile kinematics
 
     // take only events in backward direction
     // in very forward direction are usually punch-troughs of protons through the detector
