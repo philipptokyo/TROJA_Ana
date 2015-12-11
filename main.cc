@@ -97,16 +97,20 @@ Int_t main(Int_t argc, char **argv){
   // Declaration of leaf types
 //  Int_t        eventNumber; //simulation input
 //  Double_t        energy;   //simulation input
-  Double_t        eventNumber;
-  Double_t        energyLoss;
-  Double_t        energyTotal;
-  Double_t        theta;
-  Double_t        phi;
+  Double_t        eventNumber=0.0;
+  Double_t        energyLoss=0.0;
+  Double_t        energyTotal=0.0;
+  Double_t        x=0.0, y=0.0, z=0.0;
+  Double_t        theta=0.0; //should not be used, doesn't include vertex
+  Double_t        phi=0.0;   //should not be used, doesn't include vertex
   
 //  tree->SetBranchAddress("energy", &energy); //simulation input
   tree->SetBranchAddress("eventNumber", &eventNumber);
   tree->SetBranchAddress("energyLoss", &energyLoss);
   tree->SetBranchAddress("energyTotal", &energyTotal);
+  tree->SetBranchAddress("x", &x);
+  tree->SetBranchAddress("y", &y);
+  tree->SetBranchAddress("z", &z);
   tree->SetBranchAddress("theta", &theta);
   tree->SetBranchAddress("phi", &phi); 
 
@@ -116,16 +120,17 @@ Int_t main(Int_t argc, char **argv){
   //Int_t           beamMassNumber;
   //Int_t           beamChargeNumber;
   //Float_t         beamEnergy;
+  Float_t         energyKinProj = 10.0*132.0;  // 10 MeV/u
   Float_t         beamX;
   Float_t         beamY;
   Float_t         beamZ;
   Float_t         beamTheta;
   Float_t         beamPhi;
 
-  //treeBeam->SetBranchAddress("beamMassNumber", &beamMassNumber);
-  //treeBeam->SetBranchAddress("beamChargeNumber", &beamChargeNumber);
-  //treeBeam->SetBranchAddress("beamEnergy", &beamEnergy);
-  treeBeam->SetBranchAddress("beamEnergy", &energyKinProj);
+  //treeBeam->SetBranchAddress("beamMassNumber", &beamMassNumber);     //needs proper implementation
+  //treeBeam->SetBranchAddress("beamChargeNumber", &beamChargeNumber); //needs proper implementation
+  //treeBeam->SetBranchAddress("beamEnergy", &beamEnergy);             //needs proper implementation
+  treeBeam->SetBranchAddress("beamEnergy", &energyKinProj); // is in MeV/u
   treeBeam->SetBranchAddress("beamX", &beamX);
   treeBeam->SetBranchAddress("beamY", &beamY);
   treeBeam->SetBranchAddress("beamZ", &beamZ);
@@ -133,24 +138,6 @@ Int_t main(Int_t argc, char **argv){
   treeBeam->SetBranchAddress("beamPhi", &beamPhi);
 
 
-
-
-//  // Projectile data
-//  // at the moment from simulation input
-//  // todo: separate simulation including incoming tracking
-//   
-//  //  only 132Sn (d,p) is implemented
-//  // 132Sn momentum/energy is fix
-//  Float_t gammaProj = (energyKinProj)/massProj + 1.0;
-//  //Float_t betaProj = TMath::Sqrt(1.0-(1.0/(gammaProj*gammaProj))); //just for cross checking
-//  Float_t momentumProj = massProj*TMath::Sqrt(gammaProj*gammaProj-1.0); 
-//  Float_t energyTotProj = massProj*gammaProj; //total energy
-//  
-//  //cout << "Incoming momentum " << momentumProj << ", kin energy " << energyKinProj << ", total energy " << energyTotProj << ", beta " << betaProj << ", gamma " << gammaProj << endl;
-//   
-//  TVector3 vProj(0.0, 0.0, momentumProj); 
-//  TLorentzVector lProj;
-//  lProj.SetPxPyPzE(0.0, 0.0, momentumProj, energyTotProj);
 
 
 
@@ -169,6 +156,17 @@ Int_t main(Int_t argc, char **argv){
   
   Int_t nevents=tree->GetEntries();
   cout << "Number of entries found in tree: " << nevents << endl;
+
+  Int_t neventsBeam=treeBeam->GetEntries();
+  if(nevents!=neventsBeam){
+    if(nevents<neventsBeam){
+      cout << "INFO: " << nevents << " simulated and " << neventsBeam << " found in simulation input. Analyzing only " << nevents << "." << endl;
+    }
+    if(nevents>neventsBeam){
+      cout << "ERROR: more events simulated (" << nevents << ") than found in simulation input file (" << neventsBeam << ")! Check this!" << endl;
+      return 0;
+    }
+  }
   
   for(Int_t e=0; e<nevents; e++){
     tree->GetEvent(e);
@@ -189,17 +187,11 @@ Int_t main(Int_t argc, char **argv){
     Float_t momentumProj = massProj*TMath::Sqrt(gammaProj*gammaProj-1.0); 
     Float_t energyTotProj = massProj*gammaProj; //total energy
     
-    //cout << "Incoming momentum " << momentumProj << ", kin energy " << energyKinProj << ", total energy " << energyTotProj << ", beta " << betaProj << ", gamma " << gammaProj << endl;
      
     TVector3 vProj(0.0, 0.0, momentumProj); 
     vProj.SetMagThetaPhi(momentumProj, beamTheta, beamPhi); // comment out this line to see the effect of no beam profile correction
     TLorentzVector lProj;
-    //lProj.SetPxPyPzE(0.0, 0.0, momentumProj, energyTotProj);
     lProj.SetPxPyPzE(vProj.X(), vProj.Y(), vProj.Z(), energyTotProj);
-
-
-
-
 
 
 
@@ -223,10 +215,10 @@ Int_t main(Int_t argc, char **argv){
     Float_t energyTotLight = gammaLight*massLight;
     Float_t momentumLight = massLight*TMath::Sqrt(gammaLight*gammaLight-1.0);
 
-    //cout << "Light ejectile momentum " << momentumLight << ", kin energy " << energyKinLight << ", gamma " << gammaLight << ", theta " << theta*180.0/TMath::Pi() << ", phi " << phi << endl;
 
-    TVector3 vLight(0.0, 0.0, 0.0); //momentum of proton
-    vLight.SetMagThetaPhi(momentumLight, theta, phi);
+    TVector3 vLight(x-beamX, y-beamY, z-beamZ); //momentum of proton
+    vLight.SetMag(momentumLight);
+    //vLight.SetMagThetaPhi(momentumLight, theta, phi);
 
     TLorentzVector lLight;
     lLight.SetPxPyPzE(vLight.X(), vLight.Y(), vLight.Z(), energyTotLight);
@@ -249,9 +241,6 @@ Int_t main(Int_t argc, char **argv){
     TLorentzVector lHeavy;
     lHeavy.SetPxPyPzE(vHeavy.X(), vHeavy.Y(), vHeavy.Z(), energyTotHeavy);
 
-    //cout << "Heavy ejectile momentum " << momentumHeavy << ", kin energy " << energyTotHeavy-massHeavy << ", total energ " << energyTotHeavy << endl;
-    //cout << endl; 
-    
 
 
     //get the excitation energy from the missing mass
