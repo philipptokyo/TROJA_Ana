@@ -35,10 +35,13 @@ Int_t main(Int_t argc, char **argv){
   	cout << argv[i] << endl;
   }
   
-  if(argc!=3){
-  	cout << "Please give 2 input argument: root file with simulation input and output, e.g. './analysis troja_input.root troja_output.root' " << endl; 
+  if(argc!=2){
+  	cout << "Please give 1 input argument: text file with input information, e.g. './analysis input.txt' " << endl; 
   	return 0;
   }
+
+  InputInfo* info=new InputInfo();
+  info->parse(argv[1]);
   
   
   
@@ -55,7 +58,7 @@ Int_t main(Int_t argc, char **argv){
  
  
   
-  TFile* fileBeam = TFile::Open(argv[1],"read");
+  TFile* fileBeam = TFile::Open(info->fOutfilenameMakeEvents,"read");
   
   if(!fileBeam){
    cout << "1st root file not found!" << endl;
@@ -72,7 +75,7 @@ Int_t main(Int_t argc, char **argv){
 
   
   
-  TFile* infile = TFile::Open(argv[2],"read");
+  TFile* infile = TFile::Open(info->fOutfilenameTroja,"read");
   
   if(!infile){
    cout << "2nd root file not found!" << endl;

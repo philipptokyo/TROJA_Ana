@@ -7,16 +7,20 @@ class InputInfo
 {
 	public:
 	
+        //todo: make proper getter and setter
+
+        Int_t fNumberEvents;
 	Float_t fBeamEnergy;
 	
-	char fInfilenameFromReaction[200];
+        char fOutfilenameReaction[300];
 	
-	char fRootfilename[200];
+	char fOutfilenameMakeEvents[300];
 	
-	Int_t fNumberEvents;
-        
+	char fOutfilenameTroja[300];
+	
         char fOedoSimFileName[300];
         
+        //
         Bool_t HaveOedoSimFileName(){return fHaveOedoSimFileName;};
         Bool_t ProfileBeamE(){return fProfileE;};
         Bool_t ProfileBeamX(){return fProfileX;};
@@ -29,8 +33,11 @@ class InputInfo
 	InputInfo();
 	~InputInfo();
 	
+        
+        
         private:
        
+        
         Bool_t fHaveOedoSimFileName; 
         Bool_t fProfileE, fProfileX, fProfileY, fProfileA, fProfileB; 
         	

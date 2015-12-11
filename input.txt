@@ -1,0 +1,39 @@
+// input example for makeEvents
+
+
+
+// rootfile with E vs Th_lab from Reactions program
+output_rootfile_reaction ~/programme/reaction/132Sndp_5.root
+
+// output root file from makeEvents
+output_rootfile_makeEvents ~/sim/troja/132Sndp_5_evnts_XYABProfile.root
+
+// output root file sim (troja)
+output_rootfile_troja ~/sim/troja/132Sndp_5_troja_XYABProfile.root
+
+
+// makeEvents:
+// number of events to generate
+// default 100, if nothing is set
+number_events 100000
+
+// beam energy per nucleon in MeV/u
+// default is 10.0 MeV/u
+beam_energy 10.0
+
+// give the root file with oedo beam profile
+//beam_profile_file_oedo /mnt/raid/OEDO/OEDO_Matsushita/132Sn/3rd_order/oedo_132sn_10MeV.root
+beam_profile_file_oedo /mnt/raid/OEDO/OEDO_Matsushita/132Sn/3rd_order/oedo_132sn_10MeV_short.root
+
+// choose what should be taken from beam profile file
+//beam_profile_energy //NOT implemented, yet
+beam_profile_position_x
+beam_profile_position_y
+beam_profile_angular_a
+beam_profile_angular_b
+
+
+
+
+// analysis
+// here some values like detector resolution can be added

@@ -7,7 +7,7 @@ InputInfo::InputInfo(){
 	
 	fNumberEvents=100;
 	fBeamEnergy=10.0; // in MeV/u
-        
+
         fHaveOedoSimFileName=false;
         
         fProfileE=false;	
@@ -81,15 +81,15 @@ void InputInfo::parse(char filename[100]){
 		//get input parameter:
 		
 		
-		if(strcmp(temp[0],"input_from_reaction")==0)  {
+		if(strcmp(temp[0],"output_rootfile_reaction")==0)  {
 // 			sprintf(infilenameFromDicebox,temp[1]);
-			strcpy(fInfilenameFromReaction,temp[1]);
-			cout << "Input file for event maker is '" << fInfilenameFromReaction << "'" << endl;
+			strcpy(fOutfilenameReaction,temp[1]);
+			cout << "Output file of reactions is '" << fOutfilenameReaction << "'" << endl;
 		}
-		else if(strcmp(temp[0],"output_rootfile")==0){
+		else if(strcmp(temp[0],"output_rootfile_makeEvents")==0){
 // 			sprintf(rootfilenameDicebox,temp[1]);
-			strcpy(fRootfilename,temp[1]);
-			cout << "Output root file is '" << fRootfilename << "'" << endl;
+			strcpy(fOutfilenameMakeEvents,temp[1]);
+			cout << "Output file of makeEvents is '" << fOutfilenameMakeEvents << "'" << endl;
 		}
 		else if(strcmp(temp[0],"beam_energy")==0){
 			fBeamEnergy=atof(temp[1]);
@@ -124,6 +124,10 @@ void InputInfo::parse(char filename[100]){
 		else if(strcmp(temp[0],"beam_profile_angular_b")==0){
                         fProfileB=true;
 			cout << "Beam profile - b angle (dy) - requested " << endl;
+		}
+		else if(strcmp(temp[0],"output_rootfile_troja")==0){
+			strcpy(fOutfilenameTroja,temp[1]);
+			cout << "Output file of troja is '" << fOutfilenameTroja << "'" << endl;
 		}
 		else {
 			cout<<"Could not read your input keyword '" << temp[0] << "'. Aborting program."<<endl; 
