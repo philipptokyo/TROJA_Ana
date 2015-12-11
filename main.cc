@@ -10,6 +10,8 @@
 
 #include "LibPerso.h"
 
+#include "InputInfo.h"
+
 using namespace std;
 
 
@@ -48,11 +50,6 @@ Int_t main(Int_t argc, char **argv){
   const Float_t massProj = 122855.922;   // 132Sn
   const Float_t massLight = 938.279;     // light ejectile, proton
   const Float_t massHeavy = 123793.125;  // heavy ejectile, 133Sn
-  
-  // beam energy
-  // should be written from root file
-  Float_t energyKinProj = 10.0*132.0;  // 10 MeV/u
- 
   
  
  
