@@ -45,7 +45,7 @@ void InputInfo::parse(char filename[100]){
 	const Int_t stopper=1000; 
 	
 	const Int_t maxArg=2;
-	char temp[maxArg][200];
+	char temp[maxArg][500];
 	
 	
 	
@@ -82,18 +82,15 @@ void InputInfo::parse(char filename[100]){
 		
 		
 		if(strcmp(temp[0],"output_rootfile_reaction")==0)  {
-// 			sprintf(infilenameFromDicebox,temp[1]);
 			strcpy(fOutfilenameReaction,temp[1]);
 			cout << "Output file of reactions is '" << fOutfilenameReaction << "'" << endl;
 		}
 		else if(strcmp(temp[0],"output_rootfile_makeEvents")==0){
-// 			sprintf(rootfilenameDicebox,temp[1]);
 			strcpy(fOutfilenameMakeEvents,temp[1]);
 			cout << "Output file of makeEvents is '" << fOutfilenameMakeEvents << "'" << endl;
 		}
 		else if(strcmp(temp[0],"beam_energy")==0){
 			fBeamEnergy=atof(temp[1]);
-			//beamGamma=1.0/TMath::Sqrt(1.0-(beamBeta*beamBeta));
 			cout << "Beam energy is set to '" << fBeamEnergy << "' MeV/u" << endl;
 		}
 		else if(strcmp(temp[0],"number_events")==0){
@@ -128,6 +125,46 @@ void InputInfo::parse(char filename[100]){
 		else if(strcmp(temp[0],"output_rootfile_troja")==0){
 			strcpy(fOutfilenameTroja,temp[1]);
 			cout << "Output file of troja is '" << fOutfilenameTroja << "'" << endl;
+		}
+		else if(strcmp(temp[0],"resolution_target_x")==0){
+			fResTargetX=atof(temp[1]);
+			cout << "Resolution of target X position is set to '" << fResTargetX << "' mm (sigma of a Gaussian)" << endl;
+		}
+		else if(strcmp(temp[0],"resolution_target_y")==0){
+			fResTargetY=atof(temp[1]);
+			cout << "Resolution of target Y position is set to '" << fResTargetY << "' mm (sigma of a Gaussian)" << endl;
+		}
+		else if(strcmp(temp[0],"resolution_target_z")==0){
+			fResTargetZ=atof(temp[1]);
+			cout << "Resolution of target Z position is set to '" << fResTargetZ << "' mm (sigma of a Gaussian)" << endl;
+		}
+		else if(strcmp(temp[0],"resolution_target_a")==0){
+			fResTargetA=atof(temp[1]);
+			cout << "Resolution of target A angle is set to '" << fResTargetA << "' mrad (sigma of a Gaussian)" << endl;
+		}
+		else if(strcmp(temp[0],"resolution_target_b")==0){
+			fResTargetB=atof(temp[1]);
+			cout << "Resolution of target B angle is set to '" << fResTargetB << "' mrad (sigma of a Gaussian)" << endl;
+		}
+		else if(strcmp(temp[0],"resolution_detector1_x")==0){
+			fResDet1X=atof(temp[1]);
+			cout << "Resolution of detector 1 X-position is set to '" << fResDet1X << "' mm (sigma of a Gaussian)" << endl;
+		}
+		else if(strcmp(temp[0],"resolution_detector1_y")==0){
+			fResDet1Y=atof(temp[1]);
+			cout << "Resolution of detector 1 Y-position is set to '" << fResDet1Y << "' mm (sigma of a Gaussian)" << endl;
+		}
+		else if(strcmp(temp[0],"resolution_detector1_z")==0){
+			fResDet1Z=atof(temp[1]);
+			cout << "Resolution of detector 1 Z-position is set to '" << fResDet1Z << "' mm (sigma of a Gaussian)" << endl;
+		}
+		else if(strcmp(temp[0],"resolution_detector1_e")==0){
+			fResDet1E=atof(temp[1]);
+			cout << "Resolution of detector 1 energy is set to '" << fResDet1E << "' MeV (sigma of a Gaussian)" << endl;
+		}
+		else if(strcmp(temp[0],"resolution_detector2_e")==0){
+			fResDet2E=atof(temp[1]);
+			cout << "Resolution of detector 2 energy is set to '" << fResDet2E << "' MeV (sigma of a Gaussian)" << endl;
 		}
 		else {
 			cout<<"Could not read your input keyword '" << temp[0] << "'. Aborting program."<<endl; 

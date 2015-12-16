@@ -7,6 +7,7 @@ output_rootfile_reaction ~/programme/reaction/132Sndp_5.root
 
 // output root file from makeEvents
 output_rootfile_makeEvents ~/sim/troja/132Sndp_5_evnts_XYABProfile.root
+//output_rootfile_makeEvents ~/sim/troja/132Sndp_5_evnts_noProfile.root
 
 // output root file sim (troja)
 output_rootfile_troja ~/sim/troja/132Sndp_5_troja_XYABProfile.root
@@ -37,3 +38,19 @@ beam_profile_angular_b
 
 // analysis
 // here some values like detector resolution can be added
+
+// position resolutions in terms of sigma of a Gaussian in mm
+resolution_target_x 0.0
+resolution_target_y 0.0
+resolution_target_z 0.0
+resolution_target_a 0.0
+resolution_target_b 0.0
+
+// position resolution of detector 1 in terms of sigma of a Gaussian in mm
+resolution_detector1_x 0.0
+resolution_detector1_y 0.0 
+resolution_detector1_z 0.0
+
+// energy (loss) resolutions of detector 1 and 2 in terms of sigma of a Gaussian in MeV 
+resolution_detector1_e 0.0 
+resolution_detector2_e 0.0 

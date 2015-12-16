@@ -43,15 +43,16 @@ Int_t main(Int_t argc, char **argv){
   InputInfo* info=new InputInfo();
   info->parse(argv[1]);
   
-  
+  TRandom3* randomizer = new TRandom3();
+  randomizer->SetSeed(0); 
   
   // define some constants
   
   // nuclear masses in MeV/u
   /// masses should be defined in an external file!
-  // const Float_t massTarget = 1875.628; // deuteron
   const Float_t massProj = 122855.922;   // 132Sn
   const Float_t massLight = 938.279;     // light ejectile, proton
+//  const Float_t massLight = 1875.628;     // light ejectile, deuteron
   const Float_t massHeavy = 123793.125;  // heavy ejectile, 133Sn
   
  
@@ -145,7 +146,8 @@ Int_t main(Int_t argc, char **argv){
 
 
   //TH1F* hMiss=new TH1F("hMiss", "Missing Mass", 1000, -20.0, 20.0);
-  TH1F* hMiss=new TH1F("hMiss", "Missing Mass", 2000, -10.0, 10.0);
+  //TH1F* hMiss=new TH1F("hMiss", "Missing Mass", 2000, -10.0, 10.0);
+  TH1F* hMiss=new TH1F("hMiss", "Missing Mass", 2000, -6.0, 1.0);
   //TH2F* hMissTheta=new TH2F("hMissTheta", "Missing mass vs. theta proton", 360,0,180,1000,-20,20);
 
 
@@ -171,6 +173,26 @@ Int_t main(Int_t argc, char **argv){
   for(Int_t e=0; e<nevents; e++){
     tree->GetEvent(e);
     treeBeam->GetEvent(e); // todo: make tree friend instead
+    
+
+    // smear out data with detector position resolutions
+    beamX=randomizer->Gaus(beamX, info->fResTargetX);
+    beamY=randomizer->Gaus(beamY, info->fResTargetY);
+    beamZ=randomizer->Gaus(beamZ, info->fResTargetZ);
+
+    x=randomizer->Gaus(x, info->fResDet1X); 
+    y=randomizer->Gaus(y, info->fResDet1Y); 
+    z=randomizer->Gaus(z, info->fResDet1Z);
+    
+    // smear out data with detector energy resolutions
+    energyLoss=randomizer->Gaus(energyLoss, info->fResDet1E);  
+    energyTotal=randomizer->Gaus(energyTotal, info->fResDet2E);  
+
+    // smearing with angles of the incoming beam is done below
+
+
+
+
 
 
     // projectile kinematics
@@ -190,6 +212,11 @@ Int_t main(Int_t argc, char **argv){
      
     TVector3 vProj(0.0, 0.0, momentumProj); 
     vProj.SetMagThetaPhi(momentumProj, beamTheta, beamPhi); // comment out this line to see the effect of no beam profile correction
+    
+    // rotate by beam angular resolution
+    vProj.RotateY(randomizer->Gaus(0.0, (info->fResTargetA)/1000.0));
+    vProj.RotateX(randomizer->Gaus(0.0, (info->fResTargetB)/1000.0));
+
     TLorentzVector lProj;
     lProj.SetPxPyPzE(vProj.X(), vProj.Y(), vProj.Z(), energyTotProj);
 
@@ -201,8 +228,7 @@ Int_t main(Int_t argc, char **argv){
 
     // take only events in backward direction
     // in very forward direction are usually punch-troughs of protons through the detector
-
-    if(theta<90.){
+    if(theta<90.0){
       continue;
     }
 

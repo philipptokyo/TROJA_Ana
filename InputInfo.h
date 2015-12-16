@@ -11,6 +11,11 @@ class InputInfo
 
         Int_t fNumberEvents;
 	Float_t fBeamEnergy;
+        Float_t fResDet1X, fResDet1Y, fResDet1Z; // this should be given in detector coordinates
+        Float_t fResDet1E; // energy (loss) resolution in first detector
+        Float_t fResDet2E; // energy (loss) resolution in second detector
+        Float_t fResTargetX, fResTargetY, fResTargetZ; // should be obtained from beam tracking detector(s)
+        Float_t fResTargetA, fResTargetB; // should be obtained from beam tracking detector(s)
 	
         char fOutfilenameReaction[300];
 	
