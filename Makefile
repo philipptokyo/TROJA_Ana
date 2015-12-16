@@ -8,10 +8,10 @@ ifdef ROOTSYS
 CFLAGS = -c -g -Wall
 
 LDFLAGS  := `root-config --libs`
-LDFLAGS += -L/home/philipp/lib/InputInfo -lInputInfo
+#LDFLAGS += -L/home/philipp/lib/InputInfo -lInputInfo
 CPPFLAGS := `root-config --cflags`
-CPPFLAGS += -I/home/philipp/lib/InputInfo/
-ROOTLIBS  = -lGui -lCore -lCint -lRIO -lNet -lHist -lGraf -lGraf3d -lGpad -lTree -lRint -lPostscript -lMatrix -lPhysics -lMathCore -lThread -pthread -lm -ldl -rdynamic -lMinuit -lSpectrum
+#CPPFLAGS += -I/home/philipp/lib/InputInfo/
+#ROOTLIBS  = -lGui -lCore -lCint -lRIO -lNet -lHist -lGraf -lGraf3d -lGpad -lTree -lRint -lPostscript -lMatrix -lPhysics -lMathCore -lThread -pthread -lm -ldl -rdynamic -lMinuit -lSpectrum
 
 else
 all:
