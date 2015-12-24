@@ -166,6 +166,10 @@ void InputInfo::parse(char filename[100]){
 			fResDet2E=atof(temp[1]);
 			cout << "Resolution of detector 2 energy is set to '" << fResDet2E << "' MeV (sigma of a Gaussian)" << endl;
 		}
+		else if(strcmp(temp[0],"resolution_beam_e")==0){
+			fResBeamE=atof(temp[1]);
+			cout << "Resolution of beam energy is set to '" << fResBeamE << "' MeV (sigma of a Gaussian)" << endl;
+		}
 		else {
 			cout<<"Could not read your input keyword '" << temp[0] << "'. Aborting program."<<endl; 
 			abort();

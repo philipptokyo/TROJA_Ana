@@ -3,20 +3,24 @@
 
 
 // rootfile with E vs Th_lab from Reactions program
-output_rootfile_reaction ~/programme/reaction/132Sndp_5.root
+//output_rootfile_reaction ~/programme/reaction/132Sndp_5.root
+output_rootfile_reaction ~/programme/reaction/132Sn_energy_test.root
 
 // output root file from makeEvents
-output_rootfile_makeEvents ~/sim/troja/132Sndp_5_evnts_XYABProfile.root
+//output_rootfile_makeEvents ~/sim/troja/132Sndp_5_evnts_XYABProfile.root
 //output_rootfile_makeEvents ~/sim/troja/132Sndp_5_evnts_noProfile.root
+output_rootfile_makeEvents ~/programme/makeEvents/132Sn_energy_test.root
 
 // output root file sim (troja)
-output_rootfile_troja ~/sim/troja/132Sndp_5_troja_XYABProfile.root
+//output_rootfile_troja ~/sim/troja/132Sndp_5_troja_XYABProfile.root
+output_rootfile_troja ~/sim/troja/132Sn_energy_test_troja.root
 
 
 // makeEvents:
 // number of events to generate
 // default 100, if nothing is set
-number_events 100000
+//number_events 100000
+number_events 90000
 
 // beam energy per nucleon in MeV/u
 // default is 10.0 MeV/u
@@ -54,3 +58,7 @@ resolution_detector1_z 0.0
 // energy (loss) resolutions of detector 1 and 2 in terms of sigma of a Gaussian in MeV 
 resolution_detector1_e 0.0 
 resolution_detector2_e 0.0 
+
+// beam energy resolution in terms of sigma of a Gaussian in MeV
+resolution_beam_e 0.0
+

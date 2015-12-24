@@ -11,6 +11,7 @@ class InputInfo
 
         Int_t fNumberEvents;
 	Float_t fBeamEnergy;
+        Float_t fResBeamE;
         Float_t fResDet1X, fResDet1Y, fResDet1Z; // this should be given in detector coordinates
         Float_t fResDet1E; // energy (loss) resolution in first detector
         Float_t fResDet2E; // energy (loss) resolution in second detector

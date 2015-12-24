@@ -201,7 +201,9 @@ Int_t main(Int_t argc, char **argv){
     // Projectile data
     // at the moment from simulation input
     // todo: separate simulation including incoming tracking
-     
+
+    energyKinProj = randomizer->Gaus(energyKinProj, info->fResBeamE);
+      
     //  only 132Sn (d,p) is implemented
     // 132Sn momentum/energy is fix
     Float_t gammaProj = (energyKinProj)/massProj + 1.0;
