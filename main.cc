@@ -59,7 +59,7 @@ Int_t main(Int_t argc, char **argv){
  
  
   
-  TFile* fileBeam = TFile::Open(info->fOutfilenameMakeEvents,"read");
+  TFile* fileBeam = TFile::Open(info->fOutFileNameMakeEvents,"read");
   
   if(!fileBeam){
    cout << "1st root file not found!" << endl;
@@ -76,7 +76,7 @@ Int_t main(Int_t argc, char **argv){
 
   
   
-  TFile* infile = TFile::Open(info->fOutfilenameTroja,"read");
+  TFile* infile = TFile::Open(info->fOutFileNameTroja,"read");
   
   if(!infile){
    cout << "2nd root file not found!" << endl;
