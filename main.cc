@@ -6,11 +6,11 @@
  **/
 
 
-#include "main.h"
+#include "main.hh"
 
 #include "LibPerso.h"
 
-#include "InputInfo.h"
+#include "InputInfo.hh"
 
 using namespace std;
 

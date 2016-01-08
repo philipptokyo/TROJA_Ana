@@ -1,5 +1,5 @@
 
-#include "InputInfo.h"
+#include "InputInfo.hh"
 
 using namespace std;
 
@@ -15,6 +15,18 @@ InputInfo::InputInfo(){
         fProfileY=false;	
         fProfileA=false;	
         fProfileB=false;	
+
+        fResTargetX=0.0;
+        fResTargetY=0.0;  
+        fResTargetZ=0.0;  
+        fResTargetA=0.0;   
+        fResTargetB=0.0;  
+        fResDet1X  =0.0;   
+        fResDet1Y  =0.0;  
+        fResDet1Z  =0.0;   
+        fResDet1E  =0.0;   
+        fResDet2E  =0.0;   
+        fResBeamE  =0.0;   
 }
 
 InputInfo::~InputInfo(){
@@ -42,7 +54,7 @@ void InputInfo::parse(char filename[100]){
 	//parse input file line-wise
 	string line;
 	Int_t counter=0;
-	const Int_t stopper=1000; 
+	const Int_t stopper=10000; 
 	
 	const Int_t maxArg=2;
 	char temp[maxArg][500];
@@ -80,28 +92,38 @@ void InputInfo::parse(char filename[100]){
 		
 		//get input parameter:
 		
-		
+	        // file names	
 		if(strcmp(temp[0],"output_rootfile_reaction")==0)  {
-			strcpy(fOutfilenameReaction,temp[1]);
-			cout << "Output file of reactions is '" << fOutfilenameReaction << "'" << endl;
+			strcpy(fOutFileNameReaction,temp[1]);
+			cout << "Output file of reactions is '" << fOutFileNameReaction << "'" << endl;
 		}
 		else if(strcmp(temp[0],"output_rootfile_makeEvents")==0){
-			strcpy(fOutfilenameMakeEvents,temp[1]);
-			cout << "Output file of makeEvents is '" << fOutfilenameMakeEvents << "'" << endl;
+			strcpy(fOutFileNameMakeEvents,temp[1]);
+			cout << "Output file of makeEvents is '" << fOutFileNameMakeEvents << "'" << endl;
 		}
-		else if(strcmp(temp[0],"beam_energy")==0){
-			fBeamEnergy=atof(temp[1]);
-			cout << "Beam energy is set to '" << fBeamEnergy << "' MeV/u" << endl;
+		else if(strcmp(temp[0],"output_rootfile_troja")==0){
+			strcpy(fOutFileNameTroja,temp[1]);
+			cout << "Output file of troja is '" << fOutFileNameTroja << "'" << endl;
 		}
-		else if(strcmp(temp[0],"number_events")==0){
-			fNumberEvents=atoi(temp[1]);
-			cout << "Number of events to generate is set to " << fNumberEvents << endl;
+		else if(strcmp(temp[0],"output_rootfile_analysis")==0){
+			strcpy(fOutFileNameAnalysis,temp[1]);
+			cout << "Output file of analysis is '" << fOutFileNameAnalysis << "'" << endl;
 		}
 		else if(strcmp(temp[0],"beam_profile_file_oedo")==0){
 			strcpy(fOedoSimFileName,temp[1]);
                         fHaveOedoSimFileName=true;
 			cout << "Root file name with OEDO beam profile is set to " << fOedoSimFileName << endl;
 		}
+                // general parameter for all programs
+		else if(strcmp(temp[0],"number_events")==0){
+			fNumberEvents=atoi(temp[1]);
+			cout << "Number of events is set to " << fNumberEvents << endl;
+		}
+		else if(strcmp(temp[0],"beam_energy")==0){
+			fBeamEnergy=atof(temp[1]);
+			cout << "Beam energy is set to '" << fBeamEnergy << "' MeV/u" << endl;
+		}
+                // event generator related stuff
 		else if(strcmp(temp[0],"beam_profile_energy")==0){
                         fProfileE=true;
 			cout << "Beam profile - energy - requested " << endl;
@@ -122,10 +144,7 @@ void InputInfo::parse(char filename[100]){
                         fProfileB=true;
 			cout << "Beam profile - b angle (dy) - requested " << endl;
 		}
-		else if(strcmp(temp[0],"output_rootfile_troja")==0){
-			strcpy(fOutfilenameTroja,temp[1]);
-			cout << "Output file of troja is '" << fOutfilenameTroja << "'" << endl;
-		}
+                // analysis related stuff
 		else if(strcmp(temp[0],"resolution_target_x")==0){
 			fResTargetX=atof(temp[1]);
 			cout << "Resolution of target X position is set to '" << fResTargetX << "' mm (sigma of a Gaussian)" << endl;
