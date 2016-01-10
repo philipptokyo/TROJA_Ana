@@ -176,7 +176,7 @@ Int_t main(Int_t argc, char **argv){
     
 
     // smear out data with detector position resolutions
-    beamX=randomizer->Gaus(beamX, info->fResTargetX);
+    beamX=randomizer->Gaus(beamX, info->fResTargetX); // in mm
     beamY=randomizer->Gaus(beamY, info->fResTargetY);
     beamZ=randomizer->Gaus(beamZ, info->fResTargetZ);
 
@@ -185,7 +185,7 @@ Int_t main(Int_t argc, char **argv){
     z=randomizer->Gaus(z, info->fResDet1Z);
     
     // smear out data with detector energy resolutions
-    energyLoss=randomizer->Gaus(energyLoss, info->fResDet1E);  
+    energyLoss=randomizer->Gaus(energyLoss, info->fResDet1E); // in MeV 
     energyTotal=randomizer->Gaus(energyTotal, info->fResDet2E);  
 
     // smearing with angles of the incoming beam is done below
@@ -216,8 +216,8 @@ Int_t main(Int_t argc, char **argv){
     vProj.SetMagThetaPhi(momentumProj, beamTheta, beamPhi); // comment out this line to see the effect of no beam profile correction
     
     // rotate by beam angular resolution
-    vProj.RotateY(randomizer->Gaus(0.0, (info->fResTargetA)/1000.0));
-    vProj.RotateX(randomizer->Gaus(0.0, (info->fResTargetB)/1000.0));
+    vProj.RotateY(randomizer->Gaus(0.0, (info->fResTargetA))); // resolutions in mrad
+    vProj.RotateX(randomizer->Gaus(0.0, (info->fResTargetB)));
 
     TLorentzVector lProj;
     lProj.SetPxPyPzE(vProj.X(), vProj.Y(), vProj.Z(), energyTotProj);

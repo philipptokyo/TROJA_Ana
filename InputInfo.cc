@@ -6,6 +6,15 @@ using namespace std;
 InputInfo::InputInfo(){
 	
 	fNumberEvents=100;
+
+        fProjA=132;
+        fProjZ=50;
+        fTargetA=2;
+        fTargetZ=1;
+        fLightA=1;
+        fLightZ=1;
+        fNumberOfStates=1;
+        fMaxExEnergy=0.0;
 	fBeamEnergy=10.0; // in MeV/u
 
         fHaveOedoSimFileName=false;
@@ -119,6 +128,39 @@ void InputInfo::parse(char filename[100]){
 			fNumberEvents=atoi(temp[1]);
 			cout << "Number of events is set to " << fNumberEvents << endl;
 		}
+                // reactions and event generator
+                else if(strcmp(temp[0],"projectile_A")==0){
+                        fProjA=atof(temp[1]);
+                        cout << "Projectile mass A is set to '" << fProjA << "' u" << endl;
+                }
+                else if(strcmp(temp[0],"projectile_Z")==0){
+                        fProjZ=atof(temp[1]);
+                        cout << "Projectile charge Z is set to '" << fProjZ << "' e" << endl;
+                }
+                else if(strcmp(temp[0],"target_A")==0){
+                        fTargetA=atof(temp[1]);
+                        cout << "Target mass A is set to '" << fTargetA << "' u" << endl;
+                }
+                else if(strcmp(temp[0],"target_Z")==0){
+                        fTargetZ=atof(temp[1]);
+                        cout << "Target charge Z is set to '" << fTargetZ << "' e" << endl;
+                }
+                else if(strcmp(temp[0],"light_A")==0){
+                        fLightA=atof(temp[1]);
+                        cout << "Light ejectile mass A is set to '" << fLightA << "' u" << endl;
+                }
+                else if(strcmp(temp[0],"light_Z")==0){
+                        fLightZ=atof(temp[1]);
+                        cout << "Light ejectile charge Z is set to '" << fLightZ << "' e" << endl;
+                }
+               else if(strcmp(temp[0],"number_of_states")==0){
+                        fNumberOfStates=atof(temp[1]);
+                        cout << "Number of states in heavy ejectile is set to " << fNumberOfStates << endl;
+                }
+               else if(strcmp(temp[0],"max_excitation_energy")==0){
+                        fMaxExEnergy=atof(temp[1]);
+                        cout << "Highest excitation energy in heavy ejectile is set to " << fMaxExEnergy << " MeV" << endl;
+                }
 		else if(strcmp(temp[0],"beam_energy")==0){
 			fBeamEnergy=atof(temp[1]);
 			cout << "Beam energy is set to '" << fBeamEnergy << "' MeV/u" << endl;
