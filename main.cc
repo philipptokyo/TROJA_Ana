@@ -50,10 +50,10 @@ Int_t main(Int_t argc, char **argv){
   
   // nuclear masses in MeV/u
   /// masses should be defined in an external file!
-  const Float_t massProj = 122855.922;   // 132Sn
-  const Float_t massLight = 938.279;     // light ejectile, proton
-//  const Float_t massLight = 1875.628;     // light ejectile, deuteron
-  const Float_t massHeavy = 123793.125;  // heavy ejectile, 133Sn
+//  const Float_t massProj = 122855.922;   // 132Sn
+//  const Float_t massLight = 938.279;     // light ejectile, proton
+////  const Float_t massLight = 1875.628;     // light ejectile, deuteron
+//  const Float_t massHeavy = 123793.125;  // heavy ejectile, 133Sn
   
  
  
@@ -65,6 +65,29 @@ Int_t main(Int_t argc, char **argv){
    cout << "1st root file not found!" << endl;
    return 0;
   }
+
+  TTree* treeHeader=(TTree*)fileBeam->Get("header");
+  if(!treeHeader){
+    cout << "TTree 'header' not found in 1st root file!" << endl;
+    return 0;
+  }
+
+  //Float_t projMass=0.0, targetMass=0.0, lightMass=0.0, heavyMass=0.0, qValue=0.0;
+  Float_t massProj=0.0, massTarget=0.0, massLight=0.0, massHeavy=0.0, qValue=0.0;
+
+  treeHeader->SetBranchAddress("projMass", &massProj);
+  treeHeader->SetBranchAddress("targetMass", &massTarget);
+  treeHeader->SetBranchAddress("lightMass", &massLight);
+  treeHeader->SetBranchAddress("heavyMass", &massHeavy);
+  treeHeader->SetBranchAddress("qValue", &qValue);
+
+  treeHeader->GetEntry(0);
+  //printf("Obtained masses: projectile %f, target %f, light ejectile %f, heavy ejectile %f; Q-value %f\n", massProj, massTarget, massLight, massHeavy, qValue);
+
+
+
+
+
  
   TTree* treeBeam=(TTree*)fileBeam->Get("events");
   //TTree* tree=(TTree*)infile->Get("events"); //simulation input
@@ -276,7 +299,7 @@ Int_t main(Int_t argc, char **argv){
     
     //cout << "Missing mass " << lMiss.E() << endl;
     
-    Float_t miss = (lHeavy.E()-massHeavy) + (lLight.E()-massLight) - (lProj.E()-massProj) ;
+    Float_t miss = (lHeavy.E()-massHeavy) + (lLight.E()-massLight) - (lProj.E()-massProj) - qValue;
 
     //cout << "Missing mass " << miss << endl;
 
