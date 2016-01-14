@@ -145,17 +145,11 @@ Int_t main(Int_t argc, char **argv){
 
 
   // Initialize tree with projectile information
-  //Int_t           beamMassNumber;
-  //Int_t           beamChargeNumber;
-  //Float_t         beamEnergy;
   Float_t         energyKinProj = 10.0*132.0;  // 10 MeV/u
   Float_t         beamX, beamY, beamZ;
   Float_t         beamTheta, beamPhi;
   Double_t         genLightEnergy, genLightTheta, genLightPhi;
 
-  //treeBeam->SetBranchAddress("beamMassNumber", &beamMassNumber);     //needs proper implementation
-  //treeBeam->SetBranchAddress("beamChargeNumber", &beamChargeNumber); //needs proper implementation
-  //treeBeam->SetBranchAddress("beamEnergy", &beamEnergy);             //needs proper implementation
   treeBeam->SetBranchAddress("lightEnergy", &genLightEnergy);
   treeBeam->SetBranchAddress("lightTheta", &genLightTheta);
   treeBeam->SetBranchAddress("lightPhi", &genLightPhi);
@@ -259,8 +253,7 @@ Int_t main(Int_t argc, char **argv){
     energyTotal=randomizer->Gaus(energyTotal, info->fResDet2E);  
     energySum=energyLoss+energyTotal;
 
-    // smearing with angles of the incoming beam is done below
-
+//energySum=genLightEnergy; // todo - for testing
 
 
 
@@ -295,7 +288,7 @@ Int_t main(Int_t argc, char **argv){
 
 
 
-
+//theta*=180.0/TMath::Pi();
 
     // light ejectile kinematics
 
@@ -308,16 +301,17 @@ Int_t main(Int_t argc, char **argv){
     theta/=180.0/TMath::Pi(); // this is important if simulation output is used
 
     // get total energy and momentum of the light ejectile
-    Float_t energyKinLight = energyLoss + energyTotal; //kinetic energy of proton
+    Float_t energyKinLight = energySum; //kinetic energy of proton
     //Float_t energyKinLight = energy; //kinetic energy of proton //simulation input
     Float_t gammaLight = energyKinLight/massLight+1.0;
     Float_t energyTotLight = gammaLight*massLight;
     Float_t momentumLight = massLight*TMath::Sqrt(gammaLight*gammaLight-1.0);
 
 
-    TVector3 vLight(x-beamX, y-beamY, z-beamZ); //momentum of proton
+    TVector3 vLight(x-beamX, y-beamY, z-beamZ); //momentum direction of proton
     vLight.SetMag(momentumLight);
     //vLight.SetMagThetaPhi(momentumLight, theta, phi);
+//vLight.SetMagThetaPhi(momentumLight, genLightTheta, genLightPhi);
 
     TLorentzVector lLight;
     lLight.SetPxPyPzE(vLight.X(), vLight.Y(), vLight.Z(), energyTotLight);
