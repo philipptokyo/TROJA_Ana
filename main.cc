@@ -62,19 +62,22 @@ Int_t main(Int_t argc, char **argv){
   TFile* fileBeam = TFile::Open(info->fOutFileNameMakeEvents,"read");
   
   if(!fileBeam){
-   cout << "1st root file not found!" << endl;
+   cout << "makeEvents root file not found!" << endl;
    return 0;
   }
 
   TTree* treeHeader=(TTree*)fileBeam->Get("header");
   if(!treeHeader){
-    cout << "TTree 'header' not found in 1st root file!" << endl;
+    cout << "TTree 'header' not found in makeEvents root file!" << endl;
     return 0;
   }
 
+
+  Int_t projA=132;
   //Float_t projMass=0.0, targetMass=0.0, lightMass=0.0, heavyMass=0.0, qValue=0.0;
   Float_t massProj=0.0, massTarget=0.0, massLight=0.0, massHeavy=0.0, qValue=0.0;
 
+  treeHeader->SetBranchAddress("projA", &projA);
   treeHeader->SetBranchAddress("projMass", &massProj);
   treeHeader->SetBranchAddress("targetMass", &massTarget);
   treeHeader->SetBranchAddress("lightMass", &massLight);
@@ -92,7 +95,7 @@ Int_t main(Int_t argc, char **argv){
   TTree* treeBeam=(TTree*)fileBeam->Get("events");
   //TTree* tree=(TTree*)infile->Get("events"); //simulation input
   if(!treeBeam){
-    cout << "TTree 'events' not found in 1st root file!" << endl;
+    cout << "TTree 'events' not found in makeEvents root file!" << endl;
     //cout << "TTree 'events' not found!" << endl;
     return 0;
   }
@@ -102,14 +105,14 @@ Int_t main(Int_t argc, char **argv){
   TFile* infile = TFile::Open(info->fOutFileNameTroja,"read");
   
   if(!infile){
-   cout << "2nd root file not found!" << endl;
+   cout << "geant (troja) root file not found!" << endl;
    return 0;
   }
  
   TTree* tree=(TTree*)infile->Get("troja");
   //TTree* tree=(TTree*)infile->Get("events"); //simulation input
   if(!tree){
-    cout << "TTree 'troja' not found in 2nd root file!" << endl;
+    cout << "TTree 'troja' not found in geant root file!" << endl;
     //cout << "TTree 'events' not found!" << endl;
     return 0;
   }
@@ -123,6 +126,7 @@ Int_t main(Int_t argc, char **argv){
 //  Double_t        energy;   //simulation input
   Double_t        eventNumber=0.0;
   Double_t        energyLoss=0.0;
+  Double_t        energySum=0.0;
   Double_t        energyTotal=0.0;
   Double_t        x=0.0, y=0.0, z=0.0;
   Double_t        theta=0.0; //should not be used, doesn't include vertex
@@ -145,15 +149,16 @@ Int_t main(Int_t argc, char **argv){
   //Int_t           beamChargeNumber;
   //Float_t         beamEnergy;
   Float_t         energyKinProj = 10.0*132.0;  // 10 MeV/u
-  Float_t         beamX;
-  Float_t         beamY;
-  Float_t         beamZ;
-  Float_t         beamTheta;
-  Float_t         beamPhi;
+  Float_t         beamX, beamY, beamZ;
+  Float_t         beamTheta, beamPhi;
+  Double_t         genLightEnergy, genLightTheta, genLightPhi;
 
   //treeBeam->SetBranchAddress("beamMassNumber", &beamMassNumber);     //needs proper implementation
   //treeBeam->SetBranchAddress("beamChargeNumber", &beamChargeNumber); //needs proper implementation
   //treeBeam->SetBranchAddress("beamEnergy", &beamEnergy);             //needs proper implementation
+  treeBeam->SetBranchAddress("lightEnergy", &genLightEnergy);
+  treeBeam->SetBranchAddress("lightTheta", &genLightTheta);
+  treeBeam->SetBranchAddress("lightPhi", &genLightPhi);
   treeBeam->SetBranchAddress("beamEnergy", &energyKinProj); // is in MeV/u
   treeBeam->SetBranchAddress("beamX", &beamX);
   treeBeam->SetBranchAddress("beamY", &beamY);
@@ -166,12 +171,54 @@ Int_t main(Int_t argc, char **argv){
 
 
 
+  // define output of analysis
+  Float_t miss=0.0;
+  
+  TFile* fileAnalysis = new TFile(info->fOutFileNameAnalysis, "recreate");
+  fileAnalysis->cd();
 
-
+  // define histograms
   //TH1F* hMiss=new TH1F("hMiss", "Missing Mass", 1000, -20.0, 20.0);
   //TH1F* hMiss=new TH1F("hMiss", "Missing Mass", 2000, -10.0, 10.0);
   TH1F* hMiss=new TH1F("hMiss", "Missing Mass", 2000, -6.0, 1.0);
   //TH2F* hMissTheta=new TH2F("hMissTheta", "Missing mass vs. theta proton", 360,0,180,1000,-20,20);
+
+
+  // define tree
+  TTree* treeAnalysis = new TTree();
+
+  // write generated data to tree
+  // these values are with resolutions!!!!!!!!!!!!!
+  treeAnalysis->Branch("genLightEnergy", &genLightEnergy, "genLightEnergy/D");
+  treeAnalysis->Branch("genLightTheta", &genLightTheta, "genLightTheta/D");
+  treeAnalysis->Branch("genLightPhi", &genLightPhi, "genLightPhi/D");
+  treeAnalysis->Branch("genBeamX", &beamX, "genBeamX/F");
+  treeAnalysis->Branch("genBeamY", &beamY, "genBeamY/F");
+  treeAnalysis->Branch("genBeamZ", &beamZ, "genBeamZ/F");
+  treeAnalysis->Branch("genBeamEnergy", &energyKinProj, "genBeamEnergy/F");
+  treeAnalysis->Branch("genBeamTheta", &beamTheta, "genBeamTheta/F");
+  treeAnalysis->Branch("genBeamPhi", &beamPhi, "genBeamPhi/F");
+
+  // write simulated data to tree
+  // these values are with resolutions!!!!!!!!!!!!!
+  treeAnalysis->Branch("simLightEnergy1", &energyLoss, "simLightEnergy1/D");
+  treeAnalysis->Branch("simLightEnergy2", &energyTotal, "simLightEnergy2/D");
+  treeAnalysis->Branch("simLightEnergySum", &energySum, "simLightEnergySum/D");
+  treeAnalysis->Branch("simLightTheta", &theta, "simLightTheta/D");
+  treeAnalysis->Branch("simLightPhi", &phi, "simLightPhi/D");
+
+  // new analysis data
+  treeAnalysis->Branch("anaMissingMass", &miss, "anaMissingMass/F");
+
+  
+
+
+
+
+
+
+
+
 
 
 
@@ -210,6 +257,7 @@ Int_t main(Int_t argc, char **argv){
     // smear out data with detector energy resolutions
     energyLoss=randomizer->Gaus(energyLoss, info->fResDet1E); // in MeV 
     energyTotal=randomizer->Gaus(energyTotal, info->fResDet2E);  
+    energySum=energyLoss+energyTotal;
 
     // smearing with angles of the incoming beam is done below
 
@@ -220,7 +268,7 @@ Int_t main(Int_t argc, char **argv){
 
     // projectile kinematics
 
-    energyKinProj*=132.0; // todo: should be massProj
+    energyKinProj*=(Float_t)projA; 
     // Projectile data
     // at the moment from simulation input
     // todo: separate simulation including incoming tracking
@@ -257,7 +305,7 @@ Int_t main(Int_t argc, char **argv){
       continue;
     }
 
-    theta/=180.0/TMath::Pi(); //this is important if simulation output is used
+    theta/=180.0/TMath::Pi(); // this is important if simulation output is used
 
     // get total energy and momentum of the light ejectile
     Float_t energyKinLight = energyLoss + energyTotal; //kinetic energy of proton
@@ -299,26 +347,35 @@ Int_t main(Int_t argc, char **argv){
     
     //cout << "Missing mass " << lMiss.E() << endl;
     
-    Float_t miss = (lHeavy.E()-massHeavy) + (lLight.E()-massLight) - (lProj.E()-massProj) - qValue;
+    miss = (lHeavy.E()-massHeavy) + (lLight.E()-massLight) - (lProj.E()-massProj) - qValue;
 
     //cout << "Missing mass " << miss << endl;
 
    
     hMiss->Fill(miss);
     //hMissTheta->Fill(vLight.Theta()*180.0/TMath::Pi(), miss);
+
+
+    energyKinProj/=(Float_t)projA; // MeV/u`
+
+    treeAnalysis->Fill();
   
   }
 
   cout << nevents << " analyzed" << endl;
- 
-  hMiss->Draw();
+  
+  fileAnalysis->cd();
+  treeAnalysis->Write("analysis");
+  fileAnalysis->Close();
+
+  //hMiss->Draw();
   //hMissTheta->Draw();
   
    
   // if histograms shall be plotted, run theApp
   // otherwise program closes
-  theApp->Run();
-  //delete theApp;  
+  //theApp->Run();
+  delete theApp;  
   
   return 0;
 }
