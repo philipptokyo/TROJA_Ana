@@ -166,6 +166,9 @@ Int_t main(Int_t argc, char **argv){
 
 
   // define output of analysis
+  Float_t gammaProj, gammaLight, gammaHeavy;
+  Float_t energyTotProj, energyTotLight, energyTotHeavy;
+  Float_t momentumProj, momentumLight, momentumHeavy; 
   Float_t miss=0.0;
   
   TFile* fileAnalysis = new TFile(info->fOutFileNameAnalysis, "recreate");
@@ -174,7 +177,8 @@ Int_t main(Int_t argc, char **argv){
   // define histograms
   //TH1F* hMiss=new TH1F("hMiss", "Missing Mass", 1000, -20.0, 20.0);
   //TH1F* hMiss=new TH1F("hMiss", "Missing Mass", 2000, -10.0, 10.0);
-  TH1F* hMiss=new TH1F("hMiss", "Missing Mass", 2000, -6.0, 1.0);
+  //TH1F* hMiss=new TH1F("hMiss", "Missing Mass", 2000, -6.0, 1.0);
+  TH1F* hMiss=new TH1F("hMiss", "Missing Mass", 2000, -1.0, 1.0);
   //TH2F* hMissTheta=new TH2F("hMissTheta", "Missing mass vs. theta proton", 360,0,180,1000,-20,20);
 
 
@@ -203,6 +207,15 @@ Int_t main(Int_t argc, char **argv){
 
   // new analysis data
   treeAnalysis->Branch("anaMissingMass", &miss, "anaMissingMass/F");
+  treeAnalysis->Branch("anaProjGamma", &gammaProj, "anaProjGamma/F");
+  treeAnalysis->Branch("anaProjTotalEnergy", &energyTotProj, "anaProjTotalEnergy/F");
+  treeAnalysis->Branch("anaProjMomentum", &momentumProj, "anaProjMomentum/F");
+  treeAnalysis->Branch("anaLightGamma", &gammaLight, "anaLightGamma/F");
+  treeAnalysis->Branch("anaLightTotalEnergy", &energyTotLight, "anaLightTotalEnergy/F");
+  treeAnalysis->Branch("anaLightMomentum", &momentumLight, "anaLightMomentum/F");
+  treeAnalysis->Branch("anaHeavyGamma", &gammaHeavy, "anaHeavyGamma/F");
+  treeAnalysis->Branch("anaHeavyTotalEnergy", &energyTotHeavy, "anaHeavyTotalEnergy/F");
+  treeAnalysis->Branch("anaHeavyMomentum", &momentumHeavy, "anaHeavyMomentum/F");
 
   
 
@@ -235,10 +248,23 @@ Int_t main(Int_t argc, char **argv){
   }
   
   for(Int_t e=0; e<nevents; e++){
+
+    //todo: reset vairables!
+    miss=1000.0;
+
+
+
     tree->GetEvent(e);
     treeBeam->GetEvent(e); // todo: make tree friend instead
     
 
+    // take only events in backward direction
+    // in very forward direction are usually punch-troughs of protons through the detector
+    if(theta<90.0){
+      continue;
+    }
+    
+    
     // smear out data with detector position resolutions
     beamX=randomizer->Gaus(beamX, info->fResTargetX); // in mm
     beamY=randomizer->Gaus(beamY, info->fResTargetY);
@@ -270,10 +296,10 @@ Int_t main(Int_t argc, char **argv){
       
     //  only 132Sn (d,p) is implemented
     // 132Sn momentum/energy is fix
-    Float_t gammaProj = (energyKinProj)/massProj + 1.0;
+    gammaProj = (energyKinProj)/massProj + 1.0;
     //Float_t betaProj = TMath::Sqrt(1.0-(1.0/(gammaProj*gammaProj))); //just for cross checking
-    Float_t momentumProj = massProj*TMath::Sqrt(gammaProj*gammaProj-1.0); 
-    Float_t energyTotProj = massProj*gammaProj; //total energy
+    momentumProj = massProj*TMath::Sqrt(gammaProj*gammaProj-1.0); 
+    energyTotProj = massProj*gammaProj; //total energy
     
      
     TVector3 vProj(0.0, 0.0, momentumProj); 
@@ -285,6 +311,8 @@ Int_t main(Int_t argc, char **argv){
 
     TLorentzVector lProj;
     lProj.SetPxPyPzE(vProj.X(), vProj.Y(), vProj.Z(), energyTotProj);
+    //lProj.Boost(0.0, 0.0, -betaProj);
+    //printf("Proj mass %f, from Lorentz %f\n", massProj, lProj.E());
 
 
 
@@ -292,20 +320,15 @@ Int_t main(Int_t argc, char **argv){
 
     // light ejectile kinematics
 
-    // take only events in backward direction
-    // in very forward direction are usually punch-troughs of protons through the detector
-    if(theta<90.0){
-      continue;
-    }
-
     theta/=180.0/TMath::Pi(); // this is important if simulation output is used
 
     // get total energy and momentum of the light ejectile
     Float_t energyKinLight = energySum; //kinetic energy of proton
     //Float_t energyKinLight = energy; //kinetic energy of proton //simulation input
-    Float_t gammaLight = energyKinLight/massLight+1.0;
-    Float_t energyTotLight = gammaLight*massLight;
-    Float_t momentumLight = massLight*TMath::Sqrt(gammaLight*gammaLight-1.0);
+    gammaLight = energyKinLight/massLight+1.0;
+    //energyTotLight = gammaLight*massLight;
+    energyTotLight = energyKinLight+massLight;
+    momentumLight = massLight*TMath::Sqrt(gammaLight*gammaLight-1.0);
 
 
     TVector3 vLight(x-beamX, y-beamY, z-beamZ); //momentum direction of proton
@@ -316,6 +339,8 @@ Int_t main(Int_t argc, char **argv){
     TLorentzVector lLight;
     lLight.SetPxPyPzE(vLight.X(), vLight.Y(), vLight.Z(), energyTotLight);
     //cout << "Light ejectile momentum " << lLight.Pt() << ", kin energy " << lLight.E()-massLight << ", total energy " << lLight.E() << endl;
+    //lLight.Boost(0.0, 0.0, -betaProj);
+    //printf("Light mass %f, from Lorentz %f\n", massLight, lLight.E());
 
 
 
@@ -323,16 +348,19 @@ Int_t main(Int_t argc, char **argv){
     TVector3 vHeavy=vProj;
     vHeavy-=vLight;
 
-    Float_t momentumHeavy = vHeavy.Mag();
+    momentumHeavy = vHeavy.Mag();
     
-    Float_t gammaHeavy = TMath::Sqrt((momentumHeavy*momentumHeavy)/(massHeavy*massHeavy)+1.0);
+    gammaHeavy = TMath::Sqrt((momentumHeavy*momentumHeavy)/(massHeavy*massHeavy)+1.0);
     //Float_t energyKinHeavy = (gammaHeavy-1.0)*massHeavy;     
 
     //generate the Lorentz vector of the outgoing heavy particle
-    Float_t energyTotHeavy = gammaHeavy*massHeavy;
+    energyTotHeavy = gammaHeavy*massHeavy;
 
     TLorentzVector lHeavy;
     lHeavy.SetPxPyPzE(vHeavy.X(), vHeavy.Y(), vHeavy.Z(), energyTotHeavy);
+
+    //lHeavy.Boost(0.0, 0.0, -betaProj);
+    //printf("Heavy mass %f, from Lorentz %f\n", massHeavy, lHeavy.E());
 
 
 
@@ -344,6 +372,14 @@ Int_t main(Int_t argc, char **argv){
     miss = (lHeavy.E()-massHeavy) + (lLight.E()-massLight) - (lProj.E()-massProj) - qValue;
 
     //cout << "Missing mass " << miss << endl;
+
+    if(miss>1){
+      printf("miss mass %f, light theta %f, lightEnergy %f\n", miss, theta, energyKinLight);
+      printf("light 3 vector: %f %f %f\n", vLight.X(), vLight.Y(), vLight.Z());
+      printf("heavy 3 vector: %f %f %f\n", vHeavy.X(), vHeavy.Y(), vHeavy.Z());
+      printf("light gamma*mass %f,  mass+ekin %f\n",gammaLight*massLight, massLight+energySum);
+
+    }
 
    
     hMiss->Fill(miss);
@@ -360,15 +396,15 @@ Int_t main(Int_t argc, char **argv){
   
   fileAnalysis->cd();
   treeAnalysis->Write("analysis");
-  fileAnalysis->Close();
+  //fileAnalysis->Close();
 
-  //hMiss->Draw();
+  hMiss->Draw();
   //hMissTheta->Draw();
   
    
   // if histograms shall be plotted, run theApp
   // otherwise program closes
-  //theApp->Run();
+  theApp->Run();
   delete theApp;  
   
   return 0;

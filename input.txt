@@ -22,7 +22,7 @@ target_A 2
 target_Z 1
 light_A 1 
 light_Z 1 //outgoing Z needs to be equal to target Z, a.t.m. !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-number_of_states 3
+number_of_states 1
 max_excitation_energy 4.0
 
 // beam energy per nucleon in MeV/u
@@ -31,7 +31,7 @@ beam_energy 10.0
 
 
 // choose what should be taken from beam profile file
-beam_profile_energy
+//beam_profile_energy
 //beam_profile_position_x
 //beam_profile_position_y
 //beam_profile_angular_a
