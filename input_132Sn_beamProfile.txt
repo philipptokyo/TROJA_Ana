@@ -1,0 +1,53 @@
+// input example for makeEvents
+
+
+
+output_rootfile_makeEvents /mnt/raid/OEDO/philipp/events/132Sn_beamProfile.root
+output_rootfile_troja /mnt/raid/OEDO/philipp/geant/132Sn_beamProfile.root
+//output_rootfile_analysis /mnt/raid/OEDO/philipp/analysis/132Sn_beamProfile_woCorr.root
+output_rootfile_analysis /mnt/raid/OEDO/philipp/analysis/132Sn_beamProfile_withCorr.root
+
+// give the root file with oedo beam profile
+//beam_profile_file_oedo /mnt/raid/OEDO/OEDO_Matsushita/132Sn/3rd_order/oedo_132sn_10MeV.root
+beam_profile_file_oedo /mnt/raid/OEDO/OEDO_Matsushita/132Sn/3rd_order/oedo_132sn_10MeV_short.root
+
+
+// number of events to generate
+// default 100, if nothing is set
+number_events 100000
+
+projectile_A 132
+projectile_Z 50
+target_A 2
+target_Z 1
+light_A 1 
+light_Z 1 //outgoing Z needs to be equal to target Z, a.t.m. !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+number_of_states 3
+max_excitation_energy 4.0
+
+// beam energy per nucleon in MeV/u
+// default is 10.0 MeV/u
+beam_energy 10.0
+
+
+// choose what should be taken from beam profile file
+//beam_profile_energy
+beam_profile_position_x
+beam_profile_position_y
+beam_profile_angular_a
+beam_profile_angular_b
+
+
+// for analysis:
+resolution_target_x 0.0
+resolution_target_y 0.0
+resolution_target_z 0.0
+resolution_target_a 0.0
+resolution_target_b 0.0
+resolution_detector1_x 0.0
+resolution_detector1_y 0.0
+resolution_detector1_z 0.0
+resolution_detector1_e 0.0
+resolution_detector2_e 0.0
+resolution_beam_e 0.0
+

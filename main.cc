@@ -180,7 +180,7 @@ Int_t main(Int_t argc, char **argv){
   //TH1F* hMiss=new TH1F("hMiss", "Missing Mass", 1000, -20.0, 20.0);
   //TH1F* hMiss=new TH1F("hMiss", "Missing Mass", 2000, -10.0, 10.0);
   //TH1F* hMiss=new TH1F("hMiss", "Missing Mass", 2000, -6.0, 1.0);
-  TH1F* hMiss=new TH1F("hMiss", "Missing Mass", 2000, -5.0, 1.0);
+  TH1F* hMiss=new TH1F("hMiss", "Missing Mass", 600, -5.0, 1.0);
   //TH2F* hMissTheta=new TH2F("hMissTheta", "Missing mass vs. theta proton", 360,0,180,1000,-20,20);
 
 
@@ -331,13 +331,13 @@ Int_t main(Int_t argc, char **argv){
     // light ejectile kinematics
 
 
-theta=genLightTheta;
+//theta=genLightTheta;
 
     // get total energy and momentum of the light ejectile
     
     energySum=energyLoss+energyTotal;
-    //gammaLight = energySum/massLight+1.0;      // simulated
-gammaLight = genLightEnergy/massLight+1.0; // generated
+    gammaLight = energySum/massLight+1.0;      // simulated
+//gammaLight = genLightEnergy/massLight+1.0; // generated
    
    
    
@@ -348,8 +348,7 @@ gammaLight = genLightEnergy/massLight+1.0; // generated
 
     TVector3 vLight(x-beamX, y-beamY, z-beamZ); //momentum direction of proton
     vLight.SetMag(momentumLight);
-vLight.SetMagThetaPhi(momentumLight, theta, phi);
-    ////vLight.SetMagThetaPhi(momentumLight, genLightTheta, genLightPhi);
+//vLight.SetMagThetaPhi(momentumLight, theta, phi); // without beam position spread
 
     TLorentzVector lLight;
     lLight.SetPxPyPzE(vLight.X(), vLight.Y(), vLight.Z(), energyTotLight);
@@ -431,6 +430,9 @@ vLight.SetMagThetaPhi(momentumLight, theta, phi);
   treeAnalysis->Write("analysis");
   //fileAnalysis->Close();
 
+  hMiss->GetXaxis()->SetTitle("E_{miss} / MeV");
+  hMiss->GetYaxis()->SetTitle("cts");
+  gStyle->SetOptStat(0);
   hMiss->Draw();
   //hMissTheta->Draw();
   
