@@ -148,7 +148,8 @@ Int_t main(Int_t argc, char **argv){
   Float_t         energyKinProj = 10.0*132.0;  // 10 MeV/u
   Float_t         beamX, beamY, beamZ;
   Float_t         beamTheta, beamPhi;
-  Double_t         genLightEnergy, genLightTheta, genLightPhi;
+  Double_t        genLightEnergy, genLightTheta, genLightPhi;
+  Float_t         genExcEn=0.0;
 
   treeBeam->SetBranchAddress("lightEnergy", &genLightEnergy);
   treeBeam->SetBranchAddress("lightTheta", &genLightTheta);
@@ -159,6 +160,7 @@ Int_t main(Int_t argc, char **argv){
   treeBeam->SetBranchAddress("beamZ", &beamZ);
   treeBeam->SetBranchAddress("beamTheta", &beamTheta);
   treeBeam->SetBranchAddress("beamPhi", &beamPhi);
+  treeBeam->SetBranchAddress("excitationEnergy", &genExcEn);
 
 
 
@@ -178,7 +180,7 @@ Int_t main(Int_t argc, char **argv){
   //TH1F* hMiss=new TH1F("hMiss", "Missing Mass", 1000, -20.0, 20.0);
   //TH1F* hMiss=new TH1F("hMiss", "Missing Mass", 2000, -10.0, 10.0);
   //TH1F* hMiss=new TH1F("hMiss", "Missing Mass", 2000, -6.0, 1.0);
-  TH1F* hMiss=new TH1F("hMiss", "Missing Mass", 2000, -1.0, 1.0);
+  TH1F* hMiss=new TH1F("hMiss", "Missing Mass", 2000, -5.0, 1.0);
   //TH2F* hMissTheta=new TH2F("hMissTheta", "Missing mass vs. theta proton", 360,0,180,1000,-20,20);
 
 
@@ -196,6 +198,7 @@ Int_t main(Int_t argc, char **argv){
   treeAnalysis->Branch("genBeamEnergy", &energyKinProj, "genBeamEnergy/F");
   treeAnalysis->Branch("genBeamTheta", &beamTheta, "genBeamTheta/F");
   treeAnalysis->Branch("genBeamPhi", &beamPhi, "genBeamPhi/F");
+  treeAnalysis->Branch("genExcEn", &genExcEn, "genExcEn/F");
 
   // write simulated data to tree
   // these values are with resolutions!!!!!!!!!!!!!
@@ -258,12 +261,14 @@ Int_t main(Int_t argc, char **argv){
     treeBeam->GetEvent(e); // todo: make tree friend instead
     
 
+
     // take only events in backward direction
     // in very forward direction are usually punch-troughs of protons through the detector
     if(theta<90.0){
       continue;
     }
     
+    theta/=180.0/TMath::Pi(); // this is important if simulation output is used
     
     // smear out data with detector position resolutions
     beamX=randomizer->Gaus(beamX, info->fResTargetX); // in mm
@@ -278,10 +283,6 @@ Int_t main(Int_t argc, char **argv){
     energyLoss=randomizer->Gaus(energyLoss, info->fResDet1E); // in MeV 
     energyTotal=randomizer->Gaus(energyTotal, info->fResDet2E);  
     energySum=energyLoss+energyTotal;
-
-//energySum=genLightEnergy; // todo - for testing
-
-
 
 
 
@@ -304,6 +305,8 @@ Int_t main(Int_t argc, char **argv){
      
     TVector3 vProj(0.0, 0.0, momentumProj); 
     vProj.SetMagThetaPhi(momentumProj, beamTheta, beamPhi); // comment out this line to see the effect of no beam profile correction
+//TVector3 vProj(0.0, 0.0, 1.0); 
+//vProj.SetTheta(beamTheta); 
     
     // rotate by beam angular resolution
     vProj.RotateY(randomizer->Gaus(0.0, (info->fResTargetA))); // resolutions in mrad
@@ -311,53 +314,82 @@ Int_t main(Int_t argc, char **argv){
 
     TLorentzVector lProj;
     lProj.SetPxPyPzE(vProj.X(), vProj.Y(), vProj.Z(), energyTotProj);
-    //lProj.Boost(0.0, 0.0, -betaProj);
-    //printf("Proj mass %f, from Lorentz %f\n", massProj, lProj.E());
+    ////lProj.Boost(0.0, 0.0, -betaProj);
+    ////printf("Proj mass %f, from Lorentz %f\n", massProj, lProj.E());
+//TLorentzVector lProj(vProj, energyKinProj+massProj);
+//lProj.SetRho(TMath::Sqrt( (energyKinProj+massProj) * (energyKinProj+massProj) - (massProj*massProj) ));
+
+//printf("Proj Ekin %f, Lor E %f\n", energyKinProj, lProj.E());
 
 
 
-//theta*=180.0/TMath::Pi();
+
+
+
+
 
     // light ejectile kinematics
 
-    theta/=180.0/TMath::Pi(); // this is important if simulation output is used
+
+theta=genLightTheta;
 
     // get total energy and momentum of the light ejectile
-    Float_t energyKinLight = energySum; //kinetic energy of proton
-    //Float_t energyKinLight = energy; //kinetic energy of proton //simulation input
-    gammaLight = energyKinLight/massLight+1.0;
-    //energyTotLight = gammaLight*massLight;
-    energyTotLight = energyKinLight+massLight;
+    
+    energySum=energyLoss+energyTotal;
+    //gammaLight = energySum/massLight+1.0;      // simulated
+gammaLight = genLightEnergy/massLight+1.0; // generated
+   
+   
+   
+    energyTotLight = gammaLight*massLight;
+    //energyTotLight = energyKinLight+massLight;
     momentumLight = massLight*TMath::Sqrt(gammaLight*gammaLight-1.0);
 
 
     TVector3 vLight(x-beamX, y-beamY, z-beamZ); //momentum direction of proton
     vLight.SetMag(momentumLight);
-    //vLight.SetMagThetaPhi(momentumLight, theta, phi);
-//vLight.SetMagThetaPhi(momentumLight, genLightTheta, genLightPhi);
+vLight.SetMagThetaPhi(momentumLight, theta, phi);
+    ////vLight.SetMagThetaPhi(momentumLight, genLightTheta, genLightPhi);
 
     TLorentzVector lLight;
     lLight.SetPxPyPzE(vLight.X(), vLight.Y(), vLight.Z(), energyTotLight);
-    //cout << "Light ejectile momentum " << lLight.Pt() << ", kin energy " << lLight.E()-massLight << ", total energy " << lLight.E() << endl;
-    //lLight.Boost(0.0, 0.0, -betaProj);
-    //printf("Light mass %f, from Lorentz %f\n", massLight, lLight.E());
+    ////cout << "Light ejectile momentum " << lLight.Pt() << ", kin energy " << lLight.E()-massLight << ", total energy " << lLight.E() << endl;
+    ////lLight.Boost(0.0, 0.0, -betaProj);
+    ////printf("Light mass %f, from Lorentz %f\n", massLight, lLight.E());
+//TVector3 vLight(0.0, 0.0, 1.0);
+//vLight.SetTheta(theta/TMath::Pi()*180.0);
+//TLorentzVector lLight(vLight, energyKinLight+massLight);
+//lLight.SetRho(TMath::Sqrt( (energyKinLight+massLight) * (energyKinLight+massLight) - (massLight*massLight) ));
+
+
+
+
+
+
+
+
 
 
 
     //calculate momentum vector of heavy ejectile
     TVector3 vHeavy=vProj;
     vHeavy-=vLight;
+    
 
     momentumHeavy = vHeavy.Mag();
-    
     gammaHeavy = TMath::Sqrt((momentumHeavy*momentumHeavy)/(massHeavy*massHeavy)+1.0);
     //Float_t energyKinHeavy = (gammaHeavy-1.0)*massHeavy;     
 
     //generate the Lorentz vector of the outgoing heavy particle
     energyTotHeavy = gammaHeavy*massHeavy;
+    //energyTotHeavy = energyKinHeavy+massHeavy;
 
     TLorentzVector lHeavy;
     lHeavy.SetPxPyPzE(vHeavy.X(), vHeavy.Y(), vHeavy.Z(), energyTotHeavy);
+//TLorentzVector lHeavy(vHeavy, energyTotHeavy);
+//lLight.SetRho(TMath::Sqrt( (energyTotHeavy) * (energyTotHeavy) - (massHeavy*massHeavy) ));
+
+
 
     //lHeavy.Boost(0.0, 0.0, -betaProj);
     //printf("Heavy mass %f, from Lorentz %f\n", massHeavy, lHeavy.E());
@@ -365,21 +397,22 @@ Int_t main(Int_t argc, char **argv){
 
 
     //get the excitation energy from the missing mass
-    //TLorentzVector lMiss = lHeavy - lLight - lProj;
+    TLorentzVector lMiss = lHeavy + lLight - lProj;
+    //printf("lMiss: E %f, Mag %f, P %f, T %f, X %f, Y %f, Z %f\n", lMiss.E(), lMiss.Mag(), lMiss.P(), lMiss.T(), lMiss.X(), lMiss.Y(), lMiss.Z());
+    miss = lMiss.E() - (massHeavy+massLight-massProj) - qValue;
     
-    //cout << "Missing mass " << lMiss.E() << endl;
-    
-    miss = (lHeavy.E()-massHeavy) + (lLight.E()-massLight) - (lProj.E()-massProj) - qValue;
+    //miss = (lHeavy.E()-massHeavy) + (lLight.E()-massLight) - (lProj.E()-massProj) - qValue;
+    //miss = (lHeavy.E()-massHeavy) + (lLight.E()-massLight) - qValue;
 
     //cout << "Missing mass " << miss << endl;
 
-    if(miss>1){
-      printf("miss mass %f, light theta %f, lightEnergy %f\n", miss, theta, energyKinLight);
-      printf("light 3 vector: %f %f %f\n", vLight.X(), vLight.Y(), vLight.Z());
-      printf("heavy 3 vector: %f %f %f\n", vHeavy.X(), vHeavy.Y(), vHeavy.Z());
-      printf("light gamma*mass %f,  mass+ekin %f\n",gammaLight*massLight, massLight+energySum);
+    ////if(miss>1){
+    //  printf("miss mass %f, light theta %f, lightEnergy %f\n", miss, theta, energyKinLight);
+    //  printf("light 3 vector: %f %f %f\n", vLight.X(), vLight.Y(), vLight.Z());
+    //  printf("heavy 3 vector: %f %f %f\n", vHeavy.X(), vHeavy.Y(), vHeavy.Z());
+    //  printf("light gamma*mass %f,  mass+ekin %f\n",gammaLight*massLight, massLight+energySum);
 
-    }
+    ////}
 
    
     hMiss->Fill(miss);

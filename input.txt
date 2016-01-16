@@ -22,7 +22,7 @@ target_A 2
 target_Z 1
 light_A 1 
 light_Z 1 //outgoing Z needs to be equal to target Z, a.t.m. !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-number_of_states 1
+number_of_states 2
 max_excitation_energy 4.0
 
 // beam energy per nucleon in MeV/u
