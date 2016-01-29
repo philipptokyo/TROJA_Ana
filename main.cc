@@ -49,11 +49,11 @@ Int_t main(Int_t argc, char **argv){
   // define some constants
   
   // nuclear masses in MeV/u
-  /// masses should be defined in an external file!
-//  const Float_t massProj = 122855.922;   // 132Sn
-//  const Float_t massLight = 938.279;     // light ejectile, proton
-////  const Float_t massLight = 1875.628;     // light ejectile, deuteron
-//  const Float_t massHeavy = 123793.125;  // heavy ejectile, 133Sn
+  // masses should be defined in an external file!
+  //  const Float_t massProj = 122855.922;   // 132Sn
+  //  const Float_t massLight = 938.279;     // light ejectile, proton
+  ////  const Float_t massLight = 1875.628;     // light ejectile, deuteron
+  //  const Float_t massHeavy = 123793.125;  // heavy ejectile, 133Sn
   
  
  
@@ -305,9 +305,6 @@ Int_t main(Int_t argc, char **argv){
     vProj.RotateY(randomizer->Gaus(0.0, (info->fResTargetA))); // resolutions in mrad
     vProj.RotateX(randomizer->Gaus(0.0, (info->fResTargetB)));
 
-//    TLorentzVector lProj;
-//    lProj.SetVect(vProj);
-//    lProj.SetE(energyTotProj);
 
 
     // center of mass kinematic values
@@ -321,7 +318,6 @@ Int_t main(Int_t argc, char **argv){
 
 
     // light ejectile kinematics
-
 
     // get total energy and momentum of the light ejectile
     
@@ -347,6 +343,8 @@ Int_t main(Int_t argc, char **argv){
     lLight.Boost(-vCm);
 
 
+
+    // heavy ejectile kinematics in center of mass system
     TLorentzVector lHeavy;
     lHeavy.SetVect(-lLight.Vect());
     lHeavy.SetE(energyCm-lLight.E());
@@ -354,56 +352,8 @@ Int_t main(Int_t argc, char **argv){
     miss = -lHeavy.M()+massHeavy;
 
 
-
-
-
-
-
-//    //calculate momentum vector of heavy ejectile
-//    TVector3 vHeavy=vProj;
-//    vHeavy-=vLight;
-//    
-//
-//    momentumHeavy = vHeavy.Mag();
-//    gammaHeavy = TMath::Sqrt((momentumHeavy*momentumHeavy)/(massHeavy*massHeavy)+1.0);
-//    //Float_t energyKinHeavy = (gammaHeavy-1.0)*massHeavy;     
-//
-//    //generate the Lorentz vector of the outgoing heavy particle
-//    energyTotHeavy = gammaHeavy*massHeavy;
-//    //energyTotHeavy = energyKinHeavy+massHeavy;
-//
-//    TLorentzVector lHeavy;
-//    //lHeavy.SetPxPyPzE(vHeavy.X(), vHeavy.Y(), vHeavy.Z(), energyTotHeavy);
-//    lHeavy.SetVect(vHeavy);
-//    lHeavy.SetE(energyTotHeavy);
-//
-//
-//
-//    //lHeavy.Boost(0.0, 0.0, -betaProj);
-//    //printf("Heavy mass %f, from Lorentz %f\n", massHeavy, lHeavy.E());
-//
-//
-//
-//    //get the excitation energy from the missing mass
-//    TLorentzVector lMiss = lHeavy + lLight - lProj;
-//    //printf("lMiss: E %f, Mag %f, P %f, T %f, X %f, Y %f, Z %f\n", lMiss.E(), lMiss.Mag(), lMiss.P(), lMiss.T(), lMiss.X(), lMiss.Y(), lMiss.Z());
-//    miss = lMiss.M() - (massHeavy+massLight-massProj) - qValue;
-    
-    //miss = (lHeavy.E()-massHeavy) + (lLight.E()-massLight) - (lProj.E()-massProj) - qValue;
-    //miss = (lHeavy.E()-massHeavy) + (lLight.E()-massLight) - qValue;
-
-    //cout << "Missing mass " << miss << endl;
-
-    ////if(miss>1){
-    //  printf("miss mass %f, light theta %f, lightEnergy %f\n", miss, theta, energyKinLight);
-    //  printf("light 3 vector: %f %f %f\n", vLight.X(), vLight.Y(), vLight.Z());
-    //  printf("heavy 3 vector: %f %f %f\n", vHeavy.X(), vHeavy.Y(), vHeavy.Z());
-    //  printf("light gamma*mass %f,  mass+ekin %f\n",gammaLight*massLight, massLight+energySum);
-
-    ////}
-
    
-    hMiss->Fill(miss);
+    //hMiss->Fill(miss);
     //hMissTheta->Fill(vLight.Theta()*180.0/TMath::Pi(), miss);
 
 
@@ -422,13 +372,13 @@ Int_t main(Int_t argc, char **argv){
   hMiss->GetXaxis()->SetTitle("E_{miss} / MeV");
   hMiss->GetYaxis()->SetTitle("cts");
   gStyle->SetOptStat(0);
-  hMiss->Draw();
+//  hMiss->Draw();
   //hMissTheta->Draw();
   
    
   // if histograms shall be plotted, run theApp
   // otherwise program closes
-  theApp->Run();
+//  theApp->Run();
   delete theApp;  
   
   return 0;
