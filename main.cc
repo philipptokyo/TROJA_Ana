@@ -261,7 +261,8 @@ Int_t main(Int_t argc, char **argv){
 
     // take only events in backward direction
     // in very forward direction are usually punch-troughs of protons through the detector
-    if(theta<90.0){
+//    if(theta<90.0){
+    if(theta==0.0){
       continue;
     }
     
@@ -331,8 +332,10 @@ Int_t main(Int_t argc, char **argv){
     //energyTotLight = energyKinLight+massLight;
     momentumLight = massLight*TMath::Sqrt(gammaLight*gammaLight-1.0);
 
-
+//printf("lightTheta %f, lightEnergy %f \n", theta, energySum);
+//printf("x %f, y %f, z %f, beamX %f, beamY %f, beamZ %f\n",x ,y, z, beamX, beamY, beamZ);
     TVector3 vLight(x-beamX, y-beamY, z-beamZ); //momentum direction of proton
+//printf("vLight.Mag %f\n", vLight.Mag());
     vLight.SetMag(momentumLight);
     //vLight.SetMagThetaPhi(momentumLight, theta, phi); // without beam position spread
 
@@ -351,7 +354,7 @@ Int_t main(Int_t argc, char **argv){
 
     miss = -lHeavy.M()+massHeavy;
 
-
+//printf("miss %f\n", miss);
    
     //hMiss->Fill(miss);
     //hMissTheta->Fill(vLight.Theta()*180.0/TMath::Pi(), miss);

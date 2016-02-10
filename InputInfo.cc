@@ -114,6 +114,10 @@ void InputInfo::parse(char filename[100]){
 			strcpy(fOutFileNameTroja,temp[1]);
 			cout << "Output file of troja is '" << fOutFileNameTroja << "'" << endl;
 		}
+		else if(strcmp(temp[0],"input_textfile_geometry")==0){
+			strcpy(fInFileNameGeometry,temp[1]);
+			cout << "Input file for detector geomety is '" << fInFileNameGeometry << "'" << endl;
+		}
 		else if(strcmp(temp[0],"output_rootfile_analysis")==0){
 			strcpy(fOutFileNameAnalysis,temp[1]);
 			cout << "Output file of analysis is '" << fOutFileNameAnalysis << "'" << endl;

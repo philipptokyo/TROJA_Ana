@@ -13,6 +13,7 @@ class InputInfo
         char fOutFileNameReaction[500];
 	char fOutFileNameMakeEvents[500];
 	char fOutFileNameTroja[500];
+	char fInFileNameGeometry[500];
         char fOutFileNameAnalysis[500];
         char fOedoSimFileName[500];
         
