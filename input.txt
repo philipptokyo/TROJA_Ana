@@ -7,6 +7,8 @@ output_rootfile_makeEvents /mnt/raid/OEDO/philipp/events/132Sn_test.root
 output_rootfile_troja /mnt/raid/OEDO/philipp/geant/132Sn_test.root
 output_rootfile_analysis /mnt/raid/OEDO/philipp/analysis/132Sn_test.root
 
+input_textfile_geometry /home/philipp/sim/troja/detector_geometry.txt
+
 // give the root file with oedo beam profile
 //beam_profile_file_oedo /mnt/raid/OEDO/OEDO_Matsushita/132Sn/3rd_order/oedo_132sn_10MeV.root
 beam_profile_file_oedo /mnt/raid/OEDO/OEDO_Matsushita/132Sn/3rd_order/oedo_132sn_10MeV_short.root

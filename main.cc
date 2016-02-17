@@ -118,6 +118,28 @@ Int_t main(Int_t argc, char **argv){
   }
 
 
+  
+  // tree with generated events / projectile information
+  Float_t         energyKinProj = 10.0*132.0;  // 10 MeV/u
+  Float_t         beamX, beamY, beamZ;
+  Float_t         beamTheta, beamPhi;
+  Double_t        genLightEnergy, genLightTheta, genLightPhi;
+  Float_t         genExcEn=0.0;
+
+  treeBeam->SetBranchAddress("lightEnergy", &genLightEnergy);
+  treeBeam->SetBranchAddress("lightTheta", &genLightTheta);
+  treeBeam->SetBranchAddress("lightPhi", &genLightPhi);
+  treeBeam->SetBranchAddress("beamEnergy", &energyKinProj); // is in MeV/u
+  treeBeam->SetBranchAddress("beamX", &beamX);
+  treeBeam->SetBranchAddress("beamY", &beamY);
+  treeBeam->SetBranchAddress("beamZ", &beamZ);
+  treeBeam->SetBranchAddress("beamTheta", &beamTheta);
+  treeBeam->SetBranchAddress("beamPhi", &beamPhi);
+  treeBeam->SetBranchAddress("excitationEnergy", &genExcEn);
+
+
+
+
 
   // Get tree with light particle simulation
 
@@ -141,27 +163,6 @@ Int_t main(Int_t argc, char **argv){
   tree->SetBranchAddress("z", &z);
   tree->SetBranchAddress("theta", &theta);
   tree->SetBranchAddress("phi", &phi); 
-
-
-
-  // Initialize tree with projectile information
-  Float_t         energyKinProj = 10.0*132.0;  // 10 MeV/u
-  Float_t         beamX, beamY, beamZ;
-  Float_t         beamTheta, beamPhi;
-  Double_t        genLightEnergy, genLightTheta, genLightPhi;
-  Float_t         genExcEn=0.0;
-
-  treeBeam->SetBranchAddress("lightEnergy", &genLightEnergy);
-  treeBeam->SetBranchAddress("lightTheta", &genLightTheta);
-  treeBeam->SetBranchAddress("lightPhi", &genLightPhi);
-  treeBeam->SetBranchAddress("beamEnergy", &energyKinProj); // is in MeV/u
-  treeBeam->SetBranchAddress("beamX", &beamX);
-  treeBeam->SetBranchAddress("beamY", &beamY);
-  treeBeam->SetBranchAddress("beamZ", &beamZ);
-  treeBeam->SetBranchAddress("beamTheta", &beamTheta);
-  treeBeam->SetBranchAddress("beamPhi", &beamPhi);
-  treeBeam->SetBranchAddress("excitationEnergy", &genExcEn);
-
 
 
 
