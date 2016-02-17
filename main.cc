@@ -12,6 +12,8 @@
 
 #include "InputInfo.hh"
 
+#include "/home/philipp/sim/troja/include/DetectorGlobals.hh"
+
 using namespace std;
 
 
@@ -144,38 +146,49 @@ Int_t main(Int_t argc, char **argv){
   // Get tree with light particle simulation
 
   // Declaration of leaf types
-//  Int_t        eventNumber; //simulation input
-//  Double_t        energy;   //simulation input
-  Double_t        eventNumber=0.0;
-  Double_t        energyLoss=0.0;
-  Double_t        energySum=0.0;
-  Double_t        energyTotal=0.0;
-  Double_t        x=0.0, y=0.0, z=0.0;
-  Double_t        theta=0.0; //should not be used, doesn't include vertex
-  Double_t        phi=0.0;   //should not be used, doesn't include vertex
+  
+  Int_t           eventNumber=0;
+  Int_t           detHit[maxDetectors]={0}; // bool: 0 if no hit, 1 if hit in detector []
+  Double_t        detEnergyLoss[maxDetectors]={0.0};
+  Int_t           detStripX[maxDetectors]={-1};
+  Int_t           detStripY[maxDetectors]={-1};
+  // for bug fixing:
+  Double_t        FIx=0.0; // first interaction point
+  Double_t        FIy=0.0;
+  Double_t        FIz=0.0;
+  Int_t           FIdetID=-1;
+  //Int_t           detHitID[maxDetectors]={-1};
   
 //  tree->SetBranchAddress("energy", &energy); //simulation input
   tree->SetBranchAddress("eventNumber", &eventNumber);
-  tree->SetBranchAddress("energyLoss", &energyLoss);
-  tree->SetBranchAddress("energyTotal", &energyTotal);
-  tree->SetBranchAddress("x", &x);
-  tree->SetBranchAddress("y", &y);
-  tree->SetBranchAddress("z", &z);
-  tree->SetBranchAddress("theta", &theta);
-  tree->SetBranchAddress("phi", &phi); 
+  tree->SetBranchAddress("detHit", detHit);
+  tree->SetBranchAddress("energy", detEnergyLoss);
+  tree->SetBranchAddress("stripX", detStripX);
+  tree->SetBranchAddress("stripY", detStripY);
+  tree->SetBranchAddress("FIx", &FIx);
+  tree->SetBranchAddress("FIy", &FIy);
+  tree->SetBranchAddress("FIz", &FIz);
+  tree->SetBranchAddress("FIdetID", &FIdetID);
+  //tree->SetBranchAddress("detHitID", detHitID);
 
 
 
 
 
   // define output of analysis
-  Float_t gammaProj, gammaLight, gammaHeavy;
-  Float_t energyTotProj, energyTotLight, energyTotHeavy;
-  Float_t momentumProj, momentumLight, momentumHeavy; 
-  Float_t miss=0.0;
+  Double_t gammaProj=0.0, gammaLight=0.0;
+  Double_t energyTotProj=0.0, energyTotLight=0.0;
+//  Double_t energyKinHeavy=0.0, energyTotHeavy=0.0, gammaHeavy=0.0, momentumHeavy=0.0;
+  Double_t energyKinLight=0.0; // is sum of all energy losses
+  Double_t momentumProj=0.0, momentumLight=0.0; 
+  Double_t simDetectorHitPos[3]={0.0}; // x, y, z
+  Double_t thetaLight=0.0, phiLight=0.0;
+  Double_t miss=0.0;
   
   TFile* fileAnalysis = new TFile(info->fOutFileNameAnalysis, "recreate");
   fileAnalysis->cd();
+
+  char tmpName[50];
 
   // define histograms
   //TH1F* hMiss=new TH1F("hMiss", "Missing Mass", 1000, -20.0, 20.0);
@@ -203,33 +216,41 @@ Int_t main(Int_t argc, char **argv){
 
   // write simulated data to tree
   // these values are with resolutions!!!!!!!!!!!!!
-  treeAnalysis->Branch("simLightEnergy1", &energyLoss, "simLightEnergy1/D");
-  treeAnalysis->Branch("simLightEnergy2", &energyTotal, "simLightEnergy2/D");
-  treeAnalysis->Branch("simLightEnergySum", &energySum, "simLightEnergySum/D");
-  treeAnalysis->Branch("simLightTheta", &theta, "simLightTheta/D");
-  treeAnalysis->Branch("simLightPhi", &phi, "simLightPhi/D");
+  sprintf(tmpName, "simDetectorEnergy[%d]/D", maxDetectors);
+  treeAnalysis->Branch("simDetectorEnergy", detEnergyLoss, tmpName);
+
+  sprintf(tmpName, "simDetectorHitPos[3]/D");
+  treeAnalysis->Branch("simDetectorHitPos", simDetectorHitPos, tmpName);
+
+  treeAnalysis->Branch("simLightEnergy", &energyKinLight, "simLightEnergy/D"); // sum of detector energy losses
+  
+  treeAnalysis->Branch("simLightTheta", &thetaLight, "simLightTheta/D");
+  treeAnalysis->Branch("simLightPhi", &phiLight, "simLightPhi/D");
+
 
   // new analysis data
-  treeAnalysis->Branch("anaMissingMass", &miss, "anaMissingMass/F");
-  treeAnalysis->Branch("anaProjGamma", &gammaProj, "anaProjGamma/F");
-  treeAnalysis->Branch("anaProjTotalEnergy", &energyTotProj, "anaProjTotalEnergy/F");
-  treeAnalysis->Branch("anaProjMomentum", &momentumProj, "anaProjMomentum/F");
-  treeAnalysis->Branch("anaLightGamma", &gammaLight, "anaLightGamma/F");
-  treeAnalysis->Branch("anaLightTotalEnergy", &energyTotLight, "anaLightTotalEnergy/F");
-  treeAnalysis->Branch("anaLightMomentum", &momentumLight, "anaLightMomentum/F");
-  treeAnalysis->Branch("anaHeavyGamma", &gammaHeavy, "anaHeavyGamma/F");
-  treeAnalysis->Branch("anaHeavyTotalEnergy", &energyTotHeavy, "anaHeavyTotalEnergy/F");
-  treeAnalysis->Branch("anaHeavyMomentum", &momentumHeavy, "anaHeavyMomentum/F");
+  treeAnalysis->Branch("anaMissingMass", &miss, "anaMissingMass/D");
+  //treeAnalysis->Branch("anaProjGamma", &gammaProj, "anaProjGamma/F");
+  //treeAnalysis->Branch("anaProjTotalEnergy", &energyTotProj, "anaProjTotalEnergy/F");
+  //treeAnalysis->Branch("anaProjMomentum", &momentumProj, "anaProjMomentum/F");
+  //treeAnalysis->Branch("anaLightGamma", &gammaLight, "anaLightGamma/F");
+  //treeAnalysis->Branch("anaLightTotalEnergy", &energyTotLight, "anaLightTotalEnergy/F");
+  //treeAnalysis->Branch("anaLightMomentum", &momentumLight, "anaLightMomentum/F");
+  //treeAnalysis->Branch("anaHeavyGamma", &gammaHeavy, "anaHeavyGamma/F");
+  //treeAnalysis->Branch("anaHeavyTotalEnergy", &energyTotHeavy, "anaHeavyTotalEnergy/F");
+  //treeAnalysis->Branch("anaHeavyMomentum", &momentumHeavy, "anaHeavyMomentum/F");
 
   
 
 
 
-
+  TStopwatch* watch = new TStopwatch();
+  watch->Start();
 
   
   Int_t nevents=tree->GetEntries();
   cout << "Number of entries found in tree: " << nevents << endl;
+  cout << "Starting analysis ..." << endl;
 
   Int_t neventsBeam=treeBeam->GetEntries();
   if(nevents!=neventsBeam){
@@ -252,36 +273,69 @@ Int_t main(Int_t argc, char **argv){
 
     //todo: reset vairables!
     miss=1000.0;
+    energyKinLight=0.0;
+
+    for(Int_t p=0;p<3;p++){
+      simDetectorHitPos[p]=0.0;
+    }
+
+    for(Int_t d=0; d<maxDetectors; d++){
+      detEnergyLoss[d]=0.0;
+      detHit[d]=0;
+    }
 
 
 
     tree->GetEvent(e);
     treeBeam->GetEvent(e); // todo: make tree friend instead
     
+    Int_t detHitSum=0; // aux
+    // sum up all energy losses
+    for(Int_t d=0; d<maxDetectors; d++){
+      detHitSum+=detHit[d];
+      if(detHit[d]==1){
+        energyKinLight+=detEnergyLoss[d];
+      }
+    }
+    
+    if(detHitSum==0){
+      continue;
+    }
+    
+    //printf("event %d, have %d detector hits with sum energy %f\n", e, detHitSum, energyKinLight);
 
+    simDetectorHitPos[0] = FIx;
+    simDetectorHitPos[1] = FIy;
+    simDetectorHitPos[2] = FIz;
+
+    // aux:
+    //Double_t x = FIx;
+    //Double_t y = FIy;
+    //Double_t z = FIz;
 
     // take only events in backward direction
     // in very forward direction are usually punch-troughs of protons through the detector
 //    if(theta<90.0){
-    if(theta==0.0){
-      continue;
-    }
+//    if(theta==0.0){
+//      continue;
+//    }
     
-    theta/=180.0/TMath::Pi(); // is actually not used anymore
+//    theta/=180.0/TMath::Pi(); // is actually not used anymore
     
     // smear out data with detector position resolutions
     beamX=randomizer->Gaus(beamX, info->fResTargetX); // in mm
     beamY=randomizer->Gaus(beamY, info->fResTargetY);
     beamZ=randomizer->Gaus(beamZ, info->fResTargetZ);
-
-    x=randomizer->Gaus(x, info->fResDet1X); 
-    y=randomizer->Gaus(y, info->fResDet1Y); 
-    z=randomizer->Gaus(z, info->fResDet1Z);
+    
+    // obsolete: 
+//    x=randomizer->Gaus(x, info->fResDet1X); 
+//    y=randomizer->Gaus(y, info->fResDet1Y); 
+//    z=randomizer->Gaus(z, info->fResDet1Z);
     
     // smear out data with detector energy resolutions
-    energyLoss=randomizer->Gaus(energyLoss, info->fResDet1E); // in MeV 
-    energyTotal=randomizer->Gaus(energyTotal, info->fResDet2E);  
-    energySum=energyLoss+energyTotal;
+//    energyLoss=randomizer->Gaus(energyLoss, info->fResDet1E); // in MeV 
+//    energyTotal=randomizer->Gaus(energyTotal, info->fResDet2E);  
+//    energySum=energyLoss+energyTotal;
 
 
 
@@ -323,8 +377,9 @@ Int_t main(Int_t argc, char **argv){
 
     // get total energy and momentum of the light ejectile
     
-    energySum=energyLoss+energyTotal;
-    gammaLight = energySum/massLight+1.0;      // simulated
+    //energySum=energyLoss+energyTotal;
+    //gammaLight = energySum/massLight+1.0;   
+    gammaLight = energyKinLight/massLight+1.0;      // simulated
     //gammaLight = genLightEnergy/massLight+1.0; // generated
     //theta=genLightTheta; // generated theta
    
@@ -333,10 +388,11 @@ Int_t main(Int_t argc, char **argv){
     //energyTotLight = energyKinLight+massLight;
     momentumLight = massLight*TMath::Sqrt(gammaLight*gammaLight-1.0);
 
-//printf("lightTheta %f, lightEnergy %f \n", theta, energySum);
-//printf("x %f, y %f, z %f, beamX %f, beamY %f, beamZ %f\n",x ,y, z, beamX, beamY, beamZ);
-    TVector3 vLight(x-beamX, y-beamY, z-beamZ); //momentum direction of proton
-//printf("vLight.Mag %f\n", vLight.Mag());
+    //printf("lightTheta %f, lightEnergy %f \n", theta, energySum);
+    //printf("x %f, y %f, z %f, beamX %f, beamY %f, beamZ %f\n",x ,y, z, beamX, beamY, beamZ);
+    //TVector3 vLight(x-beamX, y-beamY, z-beamZ); //momentum direction of proton
+    TVector3 vLight(simDetectorHitPos[0]-beamX, simDetectorHitPos[1]-beamY, simDetectorHitPos[2]-beamZ); //momentum direction of proton
+    //printf("vLight.Mag %f\n", vLight.Mag());
     vLight.SetMag(momentumLight);
     //vLight.SetMagThetaPhi(momentumLight, theta, phi); // without beam position spread
 
@@ -355,7 +411,7 @@ Int_t main(Int_t argc, char **argv){
 
     miss = -lHeavy.M()+massHeavy;
 
-//printf("miss %f\n", miss);
+    //printf("miss %f\n", miss);
    
     //hMiss->Fill(miss);
     //hMissTheta->Fill(vLight.Theta()*180.0/TMath::Pi(), miss);
@@ -368,10 +424,15 @@ Int_t main(Int_t argc, char **argv){
   }
 
   cout << nevents << " analyzed" << endl;
+
+  watch->Stop();
+  cout << "Took: real time " << watch->RealTime() << "sec., CPU time " << watch->CpuTime() << " sec." << endl;
+  cout << endl;
   
   fileAnalysis->cd();
   treeAnalysis->Write("analysis");
-  //fileAnalysis->Close();
+
+  printf("Analyzed events writen to file '%s'\n", info->fOutFileNameAnalysis);
 
   hMiss->GetXaxis()->SetTitle("E_{miss} / MeV");
   hMiss->GetYaxis()->SetTitle("cts");
@@ -383,6 +444,7 @@ Int_t main(Int_t argc, char **argv){
   // if histograms shall be plotted, run theApp
   // otherwise program closes
 //  theApp->Run();
+  fileAnalysis->Close();
   delete theApp;  
   
   return 0;
