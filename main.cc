@@ -152,6 +152,9 @@ Int_t main(Int_t argc, char **argv){
   Double_t        detEnergyLoss[maxDetectors]={0.0};
   Int_t           detStripX[maxDetectors]={-1};
   Int_t           detStripY[maxDetectors]={-1};
+  Double_t        recoPosX[maxDetectors]={NAN};
+  Double_t        recoPosY[maxDetectors]={NAN};
+  Double_t        recoPosZ[maxDetectors]={NAN};
   // for bug fixing:
   Double_t        FIx=0.0; // first interaction point
   Double_t        FIy=0.0;
@@ -169,6 +172,9 @@ Int_t main(Int_t argc, char **argv){
   tree->SetBranchAddress("FIy", &FIy);
   tree->SetBranchAddress("FIz", &FIz);
   tree->SetBranchAddress("FIdetID", &FIdetID);
+  tree->SetBranchAddress("recoPosX", recoPosX);
+  tree->SetBranchAddress("recoPosY", recoPosY);
+  tree->SetBranchAddress("recoPosZ", recoPosZ);
   //tree->SetBranchAddress("detHitID", detHitID);
 
 
@@ -304,9 +310,12 @@ Int_t main(Int_t argc, char **argv){
     
     //printf("event %d, have %d detector hits with sum energy %f\n", e, detHitSum, energyKinLight);
 
-    simDetectorHitPos[0] = FIx;
-    simDetectorHitPos[1] = FIy;
-    simDetectorHitPos[2] = FIz;
+    //simDetectorHitPos[0] = FIx;
+    //simDetectorHitPos[1] = FIy;
+    //simDetectorHitPos[2] = FIz;
+    simDetectorHitPos[0] = recoPosX[FIdetID];
+    simDetectorHitPos[1] = recoPosY[FIdetID];
+    simDetectorHitPos[2] = recoPosZ[FIdetID];
 
     // aux:
     //Double_t x = FIx;

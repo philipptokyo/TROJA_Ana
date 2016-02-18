@@ -41,15 +41,15 @@ beam_energy 10.0
 
 
 // for analysis:
-resolution_target_x 0.0
+resolution_target_x 0.0 // mm
 resolution_target_y 0.0
 resolution_target_z 0.0
-resolution_target_a 0.0
+resolution_target_a 0.0 // mrad
 resolution_target_b 0.0
-resolution_detector1_x 0.0
+resolution_detector1_x 0.0 // mm
 resolution_detector1_y 0.0
 resolution_detector1_z 0.0
-resolution_detector1_e 0.0
+resolution_detector1_e 0.0 // MeV
 resolution_detector2_e 0.0
 resolution_beam_e 0.0
 
