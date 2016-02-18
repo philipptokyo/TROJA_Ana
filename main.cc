@@ -18,6 +18,31 @@ using namespace std;
 
 
 
+
+
+
+
+//void FitTwoGaus(TH1F* hist)
+//{
+//
+//  TF1* fit1 = new TF1("gaus1", "gaus(0)", -5, 1);
+//  TF1* fit2 = new TF1("gaus2", "gaus(0)", -5, 1);
+//
+//  fit1->SetParameters(100, -4, 0.1);
+//  fit2->SetParameters(100, 0, 0.1);
+//
+//  hist->Fit(fit1 , "","", -4.5, -3.5);
+//  hist->Fit(fit2 , "","", -0.5, 0.5);
+//
+//}
+
+
+
+
+
+
+
+
 Int_t main(Int_t argc, char **argv){
   
   
@@ -200,7 +225,7 @@ Int_t main(Int_t argc, char **argv){
   //TH1F* hMiss=new TH1F("hMiss", "Missing Mass", 1000, -20.0, 20.0);
   //TH1F* hMiss=new TH1F("hMiss", "Missing Mass", 2000, -10.0, 10.0);
   //TH1F* hMiss=new TH1F("hMiss", "Missing Mass", 2000, -6.0, 1.0);
-  TH1F* hMiss=new TH1F("hMiss", "Missing Mass", 60000, -5.0, 1.0);
+  TH1F* hMiss=new TH1F("hMiss", "Missing Mass", 600, -5.0, 1.0);
   //TH2F* hMissTheta=new TH2F("hMissTheta", "Missing mass vs. theta proton", 360,0,180,1000,-20,20);
 
 
@@ -268,6 +293,8 @@ Int_t main(Int_t argc, char **argv){
       return 0;
     }
   }
+
+  Int_t goodEvents=0;
   
 
 // **********************************************************************************************************************************************************
@@ -307,6 +334,8 @@ Int_t main(Int_t argc, char **argv){
     if(detHitSum==0){
       continue;
     }
+
+    goodEvents++;
     
     //printf("event %d, have %d detector hits with sum energy %f\n", e, detHitSum, energyKinLight);
 
@@ -422,7 +451,7 @@ Int_t main(Int_t argc, char **argv){
 
     //printf("miss %f\n", miss);
    
-    //hMiss->Fill(miss);
+    hMiss->Fill(miss);
     //hMissTheta->Fill(vLight.Theta()*180.0/TMath::Pi(), miss);
 
 
@@ -432,7 +461,7 @@ Int_t main(Int_t argc, char **argv){
   
   }
 
-  cout << nevents << " analyzed" << endl;
+  cout << nevents << " events processed! " << goodEvents << " events used in analysis! Ratio: " << (Float_t)goodEvents/(Float_t)nevents*100.0 << "%" << endl;
 
   watch->Stop();
   cout << "Took: real time " << watch->RealTime() << "sec., CPU time " << watch->CpuTime() << " sec." << endl;
@@ -442,19 +471,52 @@ Int_t main(Int_t argc, char **argv){
   treeAnalysis->Write("analysis");
 
   printf("Analyzed events writen to file '%s'\n", info->fOutFileNameAnalysis);
+  
+
+
+
+
+  // plot and fit histogram
 
   hMiss->GetXaxis()->SetTitle("E_{miss} / MeV");
   hMiss->GetYaxis()->SetTitle("cts");
   gStyle->SetOptStat(0);
-//  hMiss->Draw();
+  hMiss->Draw();
   //hMissTheta->Draw();
-  
+
+  //FitTwoGaus(hMiss);  
    
+  TF1* fit1 = new TF1("gaus1", "gaus(0)", -5, 1);
+  TF1* fit2 = new TF1("gaus2", "gaus(0)", -5, 1);
+
+  fit1->SetParameters(100, -4, 0.1);
+  fit2->SetParameters(100, 0, 0.1);
+
+  fit1->SetParLimits(0,0,1000000);
+  fit1->SetParLimits(1,-4.5,-3.5);
+  fit1->SetParLimits(2,0.0,1.0  );
+  fit2->SetParLimits(0,0,1000000);
+  fit2->SetParLimits(1,-0.5,0.5);
+  fit2->SetParLimits(2,0.0,1.0  );
+
+  hMiss->Fit(fit1 , "","", -4.5, -3.5);
+  hMiss->Fit(fit2 , "","", -0.5, 0.5);
+
+  fit1->Draw("same"); 
+  
+  //printf("Integrals: Fit1 = %f, Fit2 = %f\n", fit1->Integral(), fit2->Integral()); 
+  
+  
+  
+  
+  
+  
+  
   // if histograms shall be plotted, run theApp
   // otherwise program closes
-//  theApp->Run();
-  fileAnalysis->Close();
-  delete theApp;  
+  theApp->Run();
+// fileAnalysis->Close();
+//  delete theApp;  
   
   return 0;
 }
