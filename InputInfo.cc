@@ -106,6 +106,10 @@ void InputInfo::parse(char filename[100]){
 			strcpy(fOutFileNameReaction,temp[1]);
 			cout << "Output file of reactions is '" << fOutFileNameReaction << "'" << endl;
 		}
+		else if(strcmp(temp[0],"output_textfile_fresco")==0)  {
+			strcpy(fOutFileNameFresco,temp[1]);
+			cout << "Output file of fresco is '" << fOutFileNameFresco << "'" << endl;
+		}
 		else if(strcmp(temp[0],"output_rootfile_makeEvents")==0){
 			strcpy(fOutFileNameMakeEvents,temp[1]);
 			cout << "Output file of makeEvents is '" << fOutFileNameMakeEvents << "'" << endl;

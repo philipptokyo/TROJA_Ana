@@ -11,6 +11,7 @@
 #include "LibPerso.h"
 
 #include "InputInfo.hh"
+#include "DetectorInfo.hh"
 
 #include "/home/philipp/sim/troja/include/DetectorGlobals.hh"
 
@@ -67,8 +68,11 @@ Int_t main(Int_t argc, char **argv){
   	return 0;
   }
 
-  InputInfo* info=new InputInfo();
+  InputInfo* info = new InputInfo();
   info->parse(argv[1]);
+
+  DetectorInfo* detInfo = new DetectorInfo();
+  detInfo->Parse(info->fInFileNameGeometry);
   
   TRandom3* randomizer = new TRandom3();
   randomizer->SetSeed(0); 
@@ -197,9 +201,9 @@ Int_t main(Int_t argc, char **argv){
   tree->SetBranchAddress("FIy", &FIy);
   tree->SetBranchAddress("FIz", &FIz);
   tree->SetBranchAddress("FIdetID", &FIdetID);
-  tree->SetBranchAddress("recoPosX", recoPosX);
-  tree->SetBranchAddress("recoPosY", recoPosY);
-  tree->SetBranchAddress("recoPosZ", recoPosZ);
+  //tree->SetBranchAddress("recoPosX", recoPosX);
+  //tree->SetBranchAddress("recoPosY", recoPosY);
+  //tree->SetBranchAddress("recoPosZ", recoPosZ);
   //tree->SetBranchAddress("detHitID", detHitID);
 
 
@@ -212,7 +216,7 @@ Int_t main(Int_t argc, char **argv){
 //  Double_t energyKinHeavy=0.0, energyTotHeavy=0.0, gammaHeavy=0.0, momentumHeavy=0.0;
   Double_t energyKinLight=0.0; // is sum of all energy losses
   Double_t momentumProj=0.0, momentumLight=0.0; 
-  Double_t simDetectorHitPos[3]={0.0}; // x, y, z
+  Double_t simDetectorHitPos[3]={0.0}; // x, y, z; position used for analysis
   Double_t thetaLight=0.0, phiLight=0.0;
   Double_t miss=0.0;
   
@@ -227,6 +231,8 @@ Int_t main(Int_t argc, char **argv){
   //TH1F* hMiss=new TH1F("hMiss", "Missing Mass", 2000, -6.0, 1.0);
   TH1F* hMiss=new TH1F("hMiss", "Missing Mass", 600, -5.0, 1.0);
   //TH2F* hMissTheta=new TH2F("hMissTheta", "Missing mass vs. theta proton", 360,0,180,1000,-20,20);
+  
+  TH2F* hdEE=new TH2F("hdEE", "delta E vs. E proton", 1000,0,10,100,0,5);
 
 
   // define tree
@@ -313,8 +319,11 @@ Int_t main(Int_t argc, char **argv){
     }
 
     for(Int_t d=0; d<maxDetectors; d++){
-      detEnergyLoss[d]=0.0;
-      detHit[d]=0;
+      detEnergyLoss[d] = 0.0;
+      detHit[d] = 0;
+      recoPosX[d] = NAN;
+      recoPosY[d] = NAN;
+      recoPosZ[d] = NAN;
     }
 
 
@@ -322,17 +331,35 @@ Int_t main(Int_t argc, char **argv){
     tree->GetEvent(e);
     treeBeam->GetEvent(e); // todo: make tree friend instead
     
-    Int_t detHitSum=0; // aux
+    Int_t detHitSum = 0; // aux
+    Int_t firstDetID = -1; // find out which detector fired first
+    //Int_t seconDetID = -1; // find out which detector fired second 
+
     // sum up all energy losses
     for(Int_t d=0; d<maxDetectors; d++){
-      detHitSum+=detHit[d];
+      detHitSum += detHit[d];
       if(detHit[d]==1){
         energyKinLight+=detEnergyLoss[d];
+        
+        // reconstruct position from strip number
+        detInfo->CalcHitPosition(d, detStripX[d], detStripY[d], recoPosX[d], recoPosY[d], recoPosZ[d]);
+
+        if(detInfo->IsInFront(d, firstDetID)){
+          firstDetID = d;
+        }
+        //else{
+        //  seconDetID = d;
+        //}
+
+
       }
     }
     
     if(detHitSum==0){
       continue;
+    }
+    else if(detHitSum>2){
+      printf("Warning: more than 2 detectors fired in event %d! Such events are not handled properly!\n", e);
     }
 
     goodEvents++;
@@ -342,9 +369,12 @@ Int_t main(Int_t argc, char **argv){
     //simDetectorHitPos[0] = FIx;
     //simDetectorHitPos[1] = FIy;
     //simDetectorHitPos[2] = FIz;
-    simDetectorHitPos[0] = recoPosX[FIdetID];
-    simDetectorHitPos[1] = recoPosY[FIdetID];
-    simDetectorHitPos[2] = recoPosZ[FIdetID];
+    //simDetectorHitPos[0] = recoPosX[FIdetID];
+    //simDetectorHitPos[1] = recoPosY[FIdetID];
+    //simDetectorHitPos[2] = recoPosZ[FIdetID];
+    simDetectorHitPos[0] = recoPosX[firstDetID];
+    simDetectorHitPos[1] = recoPosY[firstDetID];
+    simDetectorHitPos[2] = recoPosZ[firstDetID];
 
     // aux:
     //Double_t x = FIx;
@@ -450,9 +480,14 @@ Int_t main(Int_t argc, char **argv){
     miss = -lHeavy.M()+massHeavy;
 
     //printf("miss %f\n", miss);
-   
+    
+
+    // fill histograms
+
     hMiss->Fill(miss);
     //hMissTheta->Fill(vLight.Theta()*180.0/TMath::Pi(), miss);
+
+    hdEE->Fill(energyKinLight,detEnergyLoss[firstDetID]);
 
 
     energyKinProj/=(Float_t)projA; // MeV/u`
@@ -477,7 +512,9 @@ Int_t main(Int_t argc, char **argv){
 
 
   // plot and fit histogram
-
+  
+  TCanvas* canMissMass = new TCanvas();
+  canMissMass->cd();
   hMiss->GetXaxis()->SetTitle("E_{miss} / MeV");
   hMiss->GetYaxis()->SetTitle("cts");
   gStyle->SetOptStat(0);
@@ -506,6 +543,10 @@ Int_t main(Int_t argc, char **argv){
   
   //printf("Integrals: Fit1 = %f, Fit2 = %f\n", fit1->Integral(), fit2->Integral()); 
   
+
+  TCanvas* candEE = new TCanvas();
+  candEE->cd();
+  hdEE->Draw("colz");
   
   
   

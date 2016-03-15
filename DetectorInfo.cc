@@ -1,5 +1,5 @@
 #include "DetectorInfo.hh"
-#include "DetectorGlobals.hh"
+#include "/home/philipp/sim/troja/include/DetectorGlobals.hh"
 
 //#include "G4PhysicalConstants.hh"
 //#include "G4SystemOfUnits.hh"
@@ -93,6 +93,16 @@ Bool_t DetectorInfo::IsInFront(Int_t id1, Int_t id2)
 {
   // this routine checks if detector 1 is closer to the center of target than detector 2
   // if both detectors have the same distance to target, than false is returned
+  
+  if(id2<0 || id1>-1){
+    return true;
+  }
+  if(id1>maxDetectors){
+    return false;
+  }
+  if(id2>maxDetectors){
+    return true;
+  }
 
   TVector3 detCenter1, detCenter2;
 

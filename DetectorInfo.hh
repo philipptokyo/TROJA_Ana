@@ -7,7 +7,7 @@
 #include "LibPerso.h"
 
 //#define maxDetectors 10
-#include "DetectorGlobals.hh"
+#include "/home/philipp/sim/troja/include/DetectorGlobals.hh"
 
 using namespace std;
 
