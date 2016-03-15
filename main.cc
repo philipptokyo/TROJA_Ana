@@ -463,6 +463,10 @@ Int_t main(Int_t argc, char **argv){
     //printf("vLight.Mag %f\n", vLight.Mag());
     vLight.SetMag(momentumLight);
     //vLight.SetMagThetaPhi(momentumLight, theta, phi); // without beam position spread
+    
+    // for the root tree
+    thetaLight = vLight.Theta(); 
+    phiLight = vLight.Phi(); 
 
     TLorentzVector lLight;
     lLight.SetVect(vLight);
@@ -504,6 +508,9 @@ Int_t main(Int_t argc, char **argv){
   
   fileAnalysis->cd();
   treeAnalysis->Write("analysis");
+
+  hMiss->Write("missingMass");
+  hdEE->Write("dEE");
 
   printf("Analyzed events writen to file '%s'\n", info->fOutFileNameAnalysis);
   
@@ -555,9 +562,9 @@ Int_t main(Int_t argc, char **argv){
   
   // if histograms shall be plotted, run theApp
   // otherwise program closes
-  theApp->Run();
+//  theApp->Run();
 // fileAnalysis->Close();
-//  delete theApp;  
+  delete theApp;  
   
   return 0;
 }
