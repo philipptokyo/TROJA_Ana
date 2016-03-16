@@ -179,6 +179,7 @@ Int_t main(Int_t argc, char **argv){
   Int_t           eventNumber=0;
   Int_t           detHit[maxDetectors]={0}; // bool: 0 if no hit, 1 if hit in detector []
   Double_t        detEnergyLoss[maxDetectors]={0.0};
+  Double_t        detEnergyLossNotSmeared[maxDetectors]={0.0};
   Int_t           detStripX[maxDetectors]={-1};
   Int_t           detStripY[maxDetectors]={-1};
   Double_t        recoPosX[maxDetectors]={NAN};
@@ -195,6 +196,7 @@ Int_t main(Int_t argc, char **argv){
   tree->SetBranchAddress("eventNumber", &eventNumber);
   tree->SetBranchAddress("detHit", detHit);
   tree->SetBranchAddress("energy", detEnergyLoss);
+  tree->SetBranchAddress("energyNotSmeared", detEnergyLossNotSmeared);
   tree->SetBranchAddress("stripX", detStripX);
   tree->SetBranchAddress("stripY", detStripY);
   tree->SetBranchAddress("FIx", &FIx);
@@ -254,12 +256,13 @@ Int_t main(Int_t argc, char **argv){
   // write simulated data to tree
   // these values are with resolutions!!!!!!!!!!!!!
   sprintf(tmpName, "simDetectorEnergy[%d]/D", maxDetectors);
-  treeAnalysis->Branch("simDetectorEnergy", detEnergyLoss, tmpName);
+  treeAnalysis->Branch("simDetectorEnergyLoss", detEnergyLoss, tmpName);
+  treeAnalysis->Branch("simDetectorEnergyLossNotSmeared", detEnergyLossNotSmeared, tmpName);
 
   sprintf(tmpName, "simDetectorHitPos[3]/D");
   treeAnalysis->Branch("simDetectorHitPos", simDetectorHitPos, tmpName);
 
-  treeAnalysis->Branch("simLightEnergy", &energyKinLight, "simLightEnergy/D"); // sum of detector energy losses
+  treeAnalysis->Branch("simLightKinEnergy", &energyKinLight, "simLightEnergy/D"); // sum of detector energy losses
   
   treeAnalysis->Branch("simLightTheta", &thetaLight, "simLightTheta/D");
   treeAnalysis->Branch("simLightPhi", &phiLight, "simLightPhi/D");
@@ -339,11 +342,6 @@ Int_t main(Int_t argc, char **argv){
     for(Int_t d=0; d<maxDetectors; d++){
       detHitSum += detHit[d];
       if(detHit[d]==1){
-
-        // smear with the energy resolution
-        // todo: smearing has to be done in geant!!!!
-        //detEnergyLoss[d] = detInfo->SmearEnergy(d, detEnergyLoss[d]);
-
 
         energyKinLight+=detEnergyLoss[d];
         

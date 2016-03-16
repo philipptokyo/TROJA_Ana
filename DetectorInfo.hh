@@ -47,6 +47,7 @@ typedef struct _dat
   Int_t haveHitID[maxDetectors]; // aux, for quicker debugging... 
   
   Double_t energy[maxDetectors];
+  Double_t energyNotSmeared[maxDetectors];
   Int_t stripX[maxDetectors];
   Int_t stripY[maxDetectors];
 

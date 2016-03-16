@@ -85,6 +85,7 @@ void DetectorInfo::ResetData()
     detData.stripX[d] = -1;
     detData.stripY[d] = -1;
     detData.energy[d] = NAN;
+    detData.energyNotSmeared[d] = NAN;
 
     detData.hitPositionX[d]=NAN;
     detData.hitPositionY[d]=NAN;
