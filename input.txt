@@ -18,7 +18,7 @@ beam_profile_file_oedo /mnt/raid/OEDO/OEDO_Matsushita/132Sn/3rd_order/oedo_132sn
 
 // number of events to generate
 // default 100, if nothing is set
-number_events 100000
+number_events 1000000
 
 projectile_A 132
 projectile_Z 50

@@ -339,6 +339,12 @@ Int_t main(Int_t argc, char **argv){
     for(Int_t d=0; d<maxDetectors; d++){
       detHitSum += detHit[d];
       if(detHit[d]==1){
+
+        // smear with the energy resolution
+        // todo: smearing has to be done in geant!!!!
+        //detEnergyLoss[d] = detInfo->SmearEnergy(d, detEnergyLoss[d]);
+
+
         energyKinLight+=detEnergyLoss[d];
         
         // reconstruct position from strip number
@@ -518,8 +524,13 @@ Int_t main(Int_t argc, char **argv){
 
 
 
-  // plot and fit histogram
+  // plot histograms
   
+  TCanvas* candEE = new TCanvas();
+  candEE->cd();
+  hdEE->Draw("colz");
+  
+
   TCanvas* canMissMass = new TCanvas();
   canMissMass->cd();
   hMiss->GetXaxis()->SetTitle("E_{miss} / MeV");
@@ -551,10 +562,6 @@ Int_t main(Int_t argc, char **argv){
   //printf("Integrals: Fit1 = %f, Fit2 = %f\n", fit1->Integral(), fit2->Integral()); 
   
 
-  TCanvas* candEE = new TCanvas();
-  candEE->cd();
-  hdEE->Draw("colz");
-  
   
   
   
@@ -562,9 +569,9 @@ Int_t main(Int_t argc, char **argv){
   
   // if histograms shall be plotted, run theApp
   // otherwise program closes
-//  theApp->Run();
-// fileAnalysis->Close();
-  delete theApp;  
+  theApp->Run();
+//  fileAnalysis->Close();
+//  delete theApp;  
   
   return 0;
 }

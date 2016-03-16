@@ -19,11 +19,16 @@
 const Double_t mm = 1.0;
 const Double_t deg = TMath::Pi()/180.0;
 
+const Int_t _geo::resNoPars[2] = {0, 1};
+
 DetectorInfo::DetectorInfo()
 { 
   
   ClearGeometry();
   ResetData();
+
+  fRandomizer = new TRandom3();
+  fRandomizer->SetSeed(0);
   
 }
 
@@ -54,6 +59,11 @@ void DetectorInfo::ClearGeometry()
 
          SetName(d, "");
          SetType(d, "");
+
+    for(Int_t p=0; p<GetResNoPars(d); p++){
+       SetResPar(d, p, 0.0);
+    }
+      SetResType(d, 0);
   }
 
 }
@@ -94,7 +104,7 @@ Bool_t DetectorInfo::IsInFront(Int_t id1, Int_t id2)
   // this routine checks if detector 1 is closer to the center of target than detector 2
   // if both detectors have the same distance to target, than false is returned
   
-  if(id2<0 || id1>-1){
+  if(id2<0 && id1>-1){
     return true;
   }
   if(id1>maxDetectors){
@@ -139,7 +149,7 @@ void DetectorInfo::CalcStripNumbers(Int_t detID, Double_t hx, Double_t hy, Doubl
   vdet.RotateY(GetRotationY(detID));
   vdet.RotateZ(GetRotationZ(detID));
 
-  if(strcmp(det[detID].type.c_str(), "DSSDbox")==0){
+  if(strcmp(detGeo[detID].type.c_str(), "DSSDbox")==0){
     
     TVector3 vori(GetSize0(detID)/2.0, GetSize1(detID)/2.0, 0.0); // vector to move origin to center of lower left corner of detector
   
@@ -148,7 +158,7 @@ void DetectorInfo::CalcStripNumbers(Int_t detID, Double_t hx, Double_t hy, Doubl
     stripx = (Int_t)(vpix.X()/(GetSize0(detID)/GetNoStripsX(detID)));
     stripy = (Int_t)(vpix.Y()/(GetSize1(detID)/GetNoStripsY(detID)));
 
-  } else if(strcmp(det[detID].type.c_str(), "DSSDtube")==0){
+  } else if(strcmp(detGeo[detID].type.c_str(), "DSSDtube")==0){
     
     Double_t phips = GetSize4(detID)/((Double_t)GetNoStripsX(detID));  // angle coverage phi per x strip
     Double_t radps = (GetSize1(detID)-GetSize0(detID))/((Double_t)GetNoStripsY(detID)); // radius coverage per y strip
@@ -185,7 +195,7 @@ void DetectorInfo::CalcHitPosition(Int_t detID, Int_t stripx, Int_t stripy, Doub
   TVector3 vcen(GetCenterX(detID), GetCenterY(detID), GetCenterZ(detID)); // vector from origin to center detector
   TVector3 vdet(0.0, 1.0, 0.0);
 
-  if(strcmp(det[detID].type.c_str(), "DSSDbox")==0){
+  if(strcmp(detGeo[detID].type.c_str(), "DSSDbox")==0){
 
     Double_t pixx = (Double_t)stripx * (GetSize0(detID)/GetNoStripsX(detID)) + (GetSize0(detID)/GetNoStripsX(detID))/2.0;
     Double_t pixy = (Double_t)stripy * (GetSize1(detID)/GetNoStripsY(detID)) + (GetSize1(detID)/GetNoStripsY(detID))/2.0;
@@ -197,7 +207,7 @@ void DetectorInfo::CalcHitPosition(Int_t detID, Int_t stripx, Int_t stripy, Doub
     vdet = vpix-vori;
 
 
-  } else if(strcmp(det[detID].type.c_str(), "DSSDtube")==0){
+  } else if(strcmp(detGeo[detID].type.c_str(), "DSSDtube")==0){
 
     Double_t phips = GetSize4(detID)/((Double_t)GetNoStripsX(detID));  // angle coverage phi per x strip
     Double_t radps = (GetSize1(detID)-GetSize0(detID))/((Double_t)GetNoStripsY(detID)); // radius coverage per y strip
@@ -215,7 +225,7 @@ void DetectorInfo::CalcHitPosition(Int_t detID, Int_t stripx, Int_t stripy, Doub
 
 
   } else {
-    printf("<DetectorInfo::CalcHitPosition> invalid geometry type '%s'! Cannot determine position!\n", det[detID].type.c_str());
+    printf("<DetectorInfo::CalcHitPosition> invalid geometry type '%s'! Cannot determine position!\n", detGeo[detID].type.c_str());
     abort();
   }
 
@@ -240,6 +250,16 @@ void DetectorInfo::CalcHitPosition(Int_t detID, Int_t stripx, Int_t stripy)
 }
 
 
+
+Double_t DetectorInfo::SmearEnergy(Int_t detID, Double_t energy)
+{
+  switch(GetResType(detID)){
+    case 0: return energy;
+    case 1: // gausian
+            return fRandomizer->Gaus(energy, GetResPar(detID, 0));
+    default: return energy;
+  }
+}
 
 
 
@@ -347,11 +367,25 @@ void DetectorInfo::Parse(string filename)
       SetType(index, temp[2]);
       printf("Got type '%s'.\n", GetType(index).c_str());
     }
+    else if(strcmp(temp[0],"resolution")==0){
+      Int_t index = atoi(temp[1]);
+      Int_t type  = atoi(temp[2]);
+      
+      SetResType(index, type);
+      printf("Got Resolution type %d, parameter: ", GetResType(index));
+      
+      for(Int_t p=0; p<GetResNoPars(index); p++){
+        SetResPar(index, p, atof(temp[3+p]));
+        printf("%f ", GetResPar(index, p));
+      }
+      printf("\n");
+    }
     else {
       printf("Cannot read your input keyword '%s'. Aborting program.\n", temp[0]);
       abort();
     }
 
+    // todo: add resolution information
 
     //count lines
     counter++;
@@ -397,42 +431,42 @@ void DetectorInfo::CheckInput()
   for(Int_t d=0; d<fNoOfDet; d++){
     Double_t checkSum=0.0;
     
-    if( !((strcmp(det[d].type.c_str(),"DSSDbox")==0) || (strcmp(det[d].type.c_str(),"DSSDtube")==0)) ){
+    if( !((strcmp(detGeo[d].type.c_str(),"DSSDbox")==0) || (strcmp(detGeo[d].type.c_str(),"DSSDtube")==0)) ){
       printf("Error: invalid detector type '%s'!\n", GetType(d).c_str());
       abort();
     }
     
-    checkSum = det[d].center[0] * det[d].center[1] * det[d].center[2];
+    checkSum = detGeo[d].center[0] * detGeo[d].center[1] * detGeo[d].center[2];
     if(TMath::IsNaN(checkSum)){
-      printf("Error: invalid position for detector %d: x = %f, y = %f, z = %f\n", d, det[d].center[0], det[d].center[1], det[d].center[2]);
+      printf("Error: invalid position for detector %d: x = %f, y = %f, z = %f\n", d, detGeo[d].center[0], detGeo[d].center[1], detGeo[d].center[2]);
       abort();
     }
 
-    checkSum = det[d].rotation[0] * det[d].rotation[1] * det[d].rotation[2];
+    checkSum = detGeo[d].rotation[0] * detGeo[d].rotation[1] * detGeo[d].rotation[2];
     if(TMath::IsNaN(checkSum)){
-      printf("Error: invalid rotation for detector %d: x = %f, y = %f, z = %f\n", d, det[d].rotation[0], det[d].rotation[1], det[d].rotation[2]);
+      printf("Error: invalid rotation for detector %d: x = %f, y = %f, z = %f\n", d, detGeo[d].rotation[0], detGeo[d].rotation[1], detGeo[d].rotation[2]);
       abort();
     } 
 
-    checkSum = det[d].size[0] * det[d].size[1] * det[d].size[2];
+    checkSum = detGeo[d].size[0] * detGeo[d].size[1] * detGeo[d].size[2];
     if(TMath::IsNaN(checkSum) || checkSum==0){
-      printf("Error: invalid size for detector %d: 1st = %f, 2nd = %f, 3rd = %f\n", d, det[d].size[0], det[d].size[1], det[d].size[2]);
+      printf("Error: invalid size for detector %d: 1st = %f, 2nd = %f, 3rd = %f\n", d, detGeo[d].size[0], detGeo[d].size[1], detGeo[d].size[2]);
       abort();
     }
-    checkSum = det[d].size[3] * det[d].size[4];
-    if( (strcmp(det[d].type.c_str(),"DSSDtube")==0) && TMath::IsNaN(checkSum) ){
-      printf("Error: invalid angle for type 'DSSDtube': phi_start = %f, phi_D = %f\n", det[d].size[3], det[d].size[4]);
+    checkSum = detGeo[d].size[3] * detGeo[d].size[4];
+    if( (strcmp(detGeo[d].type.c_str(),"DSSDtube")==0) && TMath::IsNaN(checkSum) ){
+      printf("Error: invalid angle for type 'DSSDtube': phi_start = %f, phi_D = %f\n", detGeo[d].size[3], detGeo[d].size[4]);
       abort();
     }
     
-    if( (det[d].noStrips[0] < 0) || (det[d].noStrips[1] < 0) ){
-      printf("Error: invalid number of strips in detector %d: %d x, %d y (have to be nonnegative; 0 and 1 is same geometry)\n", d, det[d].noStrips[0], det[d].noStrips[1]);
+    if( (detGeo[d].noStrips[0] < 0) || (detGeo[d].noStrips[1] < 0) ){
+      printf("Error: invalid number of strips in detector %d: %d x, %d y (have to be nonnegative; 0 and 1 is same geometry)\n", d, detGeo[d].noStrips[0], detGeo[d].noStrips[1]);
       abort();
     }
 
   }
 
-
+  // todo: check if detector resolution type is valid!!!!!!
 
   //for testing:
   printf("CheckInput completed sucessfully!\n");
