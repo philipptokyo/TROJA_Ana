@@ -37,10 +37,10 @@ beam_energy 10.0
 
 // choose what should be taken from beam profile file
 //beam_profile_energy
-//beam_profile_position_x
-//beam_profile_position_y
-//beam_profile_angular_a
-//beam_profile_angular_b
+beam_profile_position_x
+beam_profile_position_y
+beam_profile_angular_a
+beam_profile_angular_b
 
 
 // for analysis:

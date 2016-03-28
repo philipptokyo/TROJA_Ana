@@ -219,7 +219,7 @@ Int_t main(Int_t argc, char **argv){
   Double_t energyKinLight=0.0; // is sum of all energy losses
   Double_t momentumProj=0.0, momentumLight=0.0; 
   Double_t simDetectorHitPos[3]={0.0}; // x, y, z; position used for analysis
-  Double_t thetaLight=0.0, phiLight=0.0;
+  Double_t thetaLightLab=0.0, thetaLightCM=0.0, phiLight=0.0;
   Double_t miss=0.0;
   
   TFile* fileAnalysis = new TFile(info->fOutFileNameAnalysis, "recreate");
@@ -235,6 +235,9 @@ Int_t main(Int_t argc, char **argv){
   //TH2F* hMissTheta=new TH2F("hMissTheta", "Missing mass vs. theta proton", 360,0,180,1000,-20,20);
   
   TH2F* hdEE=new TH2F("hdEE", "delta E vs. E proton", 1000,0,10,100,0,5);
+
+  TH1F* hThetaLab = new TH1F("hThetaLab","Theta Lab",1800,0,180);
+  TH1F* hThetaCM = new TH1F("hThetaCM","Theta CM",1800,0,180);
 
 
   // define tree
@@ -264,7 +267,8 @@ Int_t main(Int_t argc, char **argv){
 
   treeAnalysis->Branch("simLightKinEnergy", &energyKinLight, "simLightEnergy/D"); // sum of detector energy losses
   
-  treeAnalysis->Branch("simLightTheta", &thetaLight, "simLightTheta/D");
+  treeAnalysis->Branch("simLightThetaLab", &thetaLightLab, "simLightThetaLab/D");
+  treeAnalysis->Branch("simLightThetaCM", &thetaLightCM, "simLightThetaCM/D");
   treeAnalysis->Branch("simLightPhi", &phiLight, "simLightPhi/D");
 
 
@@ -469,7 +473,7 @@ Int_t main(Int_t argc, char **argv){
     //vLight.SetMagThetaPhi(momentumLight, theta, phi); // without beam position spread
     
     // for the root tree
-    thetaLight = vLight.Theta(); 
+    thetaLightLab = vLight.Theta(); 
     phiLight = vLight.Phi(); 
 
     TLorentzVector lLight;
@@ -477,6 +481,12 @@ Int_t main(Int_t argc, char **argv){
     lLight.SetE(energyTotLight);
 
     lLight.Boost(-vCm);
+
+    thetaLightCM=lLight.Theta();
+
+    hThetaLab->Fill(thetaLightLab*180.0/TMath::Pi());
+    hThetaCM->Fill(thetaLightCM*180.0/TMath::Pi());
+
 
 
 
@@ -515,6 +525,8 @@ Int_t main(Int_t argc, char **argv){
 
   hMiss->Write("missingMass");
   hdEE->Write("dEE");
+  hThetaLab->Write("hThetaLab");
+  hThetaCM->Write("hThetaCM");
 
   printf("Analyzed events writen to file '%s'\n", info->fOutFileNameAnalysis);
   
@@ -527,6 +539,15 @@ Int_t main(Int_t argc, char **argv){
   TCanvas* candEE = new TCanvas();
   candEE->cd();
   hdEE->Draw("colz");
+
+
+  TCanvas* canTheta = new TCanvas();
+  canTheta->Divide(1,2);
+  canTheta->cd(1);
+  hThetaLab->Draw();
+  canTheta->cd(2);
+  hThetaCM->Draw();
+
   
 
   TCanvas* canMissMass = new TCanvas();
