@@ -30,11 +30,11 @@ InputInfo::InputInfo(){
         fResTargetZ=0.0;  
         fResTargetA=0.0;   
         fResTargetB=0.0;  
-        fResDet1X  =0.0;   
-        fResDet1Y  =0.0;  
-        fResDet1Z  =0.0;   
-        fResDet1E  =0.0;   
-        fResDet2E  =0.0;   
+        //fResDet1X  =0.0;   
+        //fResDet1Y  =0.0;  
+        //fResDet1Z  =0.0;   
+        //fResDet1E  =0.0;   
+        //fResDet2E  =0.0;   
         fResBeamE  =0.0;   
 }
 
@@ -215,26 +215,26 @@ void InputInfo::parse(char filename[100]){
 			fResTargetB=atof(temp[1]);
 			cout << "Resolution of target B angle is set to '" << fResTargetB << "' mrad (sigma of a Gaussian)" << endl;
 		}
-		else if(strcmp(temp[0],"resolution_detector1_x")==0){
-			fResDet1X=atof(temp[1]);
-			cout << "Resolution of detector 1 X-position is set to '" << fResDet1X << "' mm (sigma of a Gaussian)" << endl;
-		}
-		else if(strcmp(temp[0],"resolution_detector1_y")==0){
-			fResDet1Y=atof(temp[1]);
-			cout << "Resolution of detector 1 Y-position is set to '" << fResDet1Y << "' mm (sigma of a Gaussian)" << endl;
-		}
-		else if(strcmp(temp[0],"resolution_detector1_z")==0){
-			fResDet1Z=atof(temp[1]);
-			cout << "Resolution of detector 1 Z-position is set to '" << fResDet1Z << "' mm (sigma of a Gaussian)" << endl;
-		}
-		else if(strcmp(temp[0],"resolution_detector1_e")==0){
-			fResDet1E=atof(temp[1]);
-			cout << "Resolution of detector 1 energy is set to '" << fResDet1E << "' MeV (sigma of a Gaussian)" << endl;
-		}
-		else if(strcmp(temp[0],"resolution_detector2_e")==0){
-			fResDet2E=atof(temp[1]);
-			cout << "Resolution of detector 2 energy is set to '" << fResDet2E << "' MeV (sigma of a Gaussian)" << endl;
-		}
+		//else if(strcmp(temp[0],"resolution_detector1_x")==0){
+		//	fResDet1X=atof(temp[1]);
+		//	cout << "Resolution of detector 1 X-position is set to '" << fResDet1X << "' mm (sigma of a Gaussian)" << endl;
+		//}
+		//else if(strcmp(temp[0],"resolution_detector1_y")==0){
+		//	fResDet1Y=atof(temp[1]);
+		//	cout << "Resolution of detector 1 Y-position is set to '" << fResDet1Y << "' mm (sigma of a Gaussian)" << endl;
+		//}
+		//else if(strcmp(temp[0],"resolution_detector1_z")==0){
+		//	fResDet1Z=atof(temp[1]);
+		//	cout << "Resolution of detector 1 Z-position is set to '" << fResDet1Z << "' mm (sigma of a Gaussian)" << endl;
+		//}
+		//else if(strcmp(temp[0],"resolution_detector1_e")==0){
+		//	fResDet1E=atof(temp[1]);
+		//	cout << "Resolution of detector 1 energy is set to '" << fResDet1E << "' MeV (sigma of a Gaussian)" << endl;
+		//}
+		//else if(strcmp(temp[0],"resolution_detector2_e")==0){
+		//	fResDet2E=atof(temp[1]);
+		//	cout << "Resolution of detector 2 energy is set to '" << fResDet2E << "' MeV (sigma of a Gaussian)" << endl;
+		//}
 		else if(strcmp(temp[0],"resolution_beam_e")==0){
 			fResBeamE=atof(temp[1]);
 			cout << "Resolution of beam energy is set to '" << fResBeamE << "' MeV (sigma of a Gaussian)" << endl;
