@@ -382,7 +382,7 @@ void DetectorInfo::Parse(string filename)
       printf("\n");
     }
     else {
-      printf("Cannot read your input keyword '%s'. Aborting program.\n", temp[0]);
+      printf("Cannot read your input keyword '%s' in line %d. Aborting program.\n", temp[0], counter);
       abort();
     }
 
