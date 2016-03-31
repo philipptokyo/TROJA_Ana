@@ -262,8 +262,15 @@ Int_t main(Int_t argc, char **argv){
   treeAnalysis->Branch("simDetectorEnergyLoss", detEnergyLoss, tmpName);
   treeAnalysis->Branch("simDetectorEnergyLossNotSmeared", detEnergyLossNotSmeared, tmpName);
 
-  sprintf(tmpName, "simDetectorHitPos[3]/D");
-  treeAnalysis->Branch("simDetectorHitPos", simDetectorHitPos, tmpName);
+  treeAnalysis->Branch("simFIx", &FIx, "simFIx/D");
+  treeAnalysis->Branch("simFIy", &FIy, "simFIy/D");
+  treeAnalysis->Branch("simFIz", &FIz, "simFIz/D");
+
+  sprintf(tmpName, "detStripX[%d]/I", maxDetectors);
+  treeAnalysis->Branch("detStripX", detStripX, tmpName);
+  sprintf(tmpName, "detStripY[%d]/I", maxDetectors);
+  treeAnalysis->Branch("detStripY", detStripY, tmpName);
+
 
   treeAnalysis->Branch("simLightKinEnergy", &energyKinLight, "simLightEnergy/D"); // sum of detector energy losses
   
@@ -273,6 +280,9 @@ Int_t main(Int_t argc, char **argv){
 
 
   // new analysis data
+  sprintf(tmpName, "anaDetectorHitPos[3]/D");
+  treeAnalysis->Branch("anaDetectorHitPos", simDetectorHitPos, tmpName);
+  
   treeAnalysis->Branch("anaMissingMass", &miss, "anaMissingMass/D");
   //treeAnalysis->Branch("anaProjGamma", &gammaProj, "anaProjGamma/F");
   //treeAnalysis->Branch("anaProjTotalEnergy", &energyTotProj, "anaProjTotalEnergy/F");

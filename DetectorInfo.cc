@@ -146,11 +146,12 @@ void DetectorInfo::CalcStripNumbers(Int_t detID, Double_t hx, Double_t hy, Doubl
 
   TVector3 vdet=vhit-vcen; // hit with respect to center of detector
   
-  vdet.RotateX(GetRotationX(detID));
-  vdet.RotateY(GetRotationY(detID));
-  vdet.RotateZ(GetRotationZ(detID));
 
   if(strcmp(detGeo[detID].type.c_str(), "DSSDbox")==0){
+
+    vdet.RotateX(GetRotationX(detID));
+    vdet.RotateY(GetRotationY(detID));
+    vdet.RotateZ(GetRotationZ(detID));
     
     TVector3 vori(GetSize0(detID)/2.0, GetSize1(detID)/2.0, 0.0); // vector to move origin to center of lower left corner of detector
   
@@ -160,6 +161,17 @@ void DetectorInfo::CalcStripNumbers(Int_t detID, Double_t hx, Double_t hy, Doubl
     stripy = (Int_t)(vpix.Y()/(GetSize1(detID)/GetNoStripsY(detID)));
 
   } else if(strcmp(detGeo[detID].type.c_str(), "DSSDtube")==0){
+
+    TVector3 vRot(1.0, 0.0, 0.0); // rotation vector
+
+    vRot.RotateZ(GetSize3(detID) + GetSize4(detID)/2.0);
+    vRot.RotateZ(-GetRotationY(detID));
+    vRot.RotateZ(90*deg);
+
+    vdet.RotateZ((GetSize3(detID) + GetSize4(detID)/2.0));
+    vdet.Rotate(GetRotationX(detID), vRot); // theta rotation
+    vdet.RotateZ(GetRotationY(detID));
+
     
     Double_t phips = GetSize4(detID)/((Double_t)GetNoStripsX(detID));  // angle coverage phi per x strip
     Double_t radps = (GetSize1(detID)-GetSize0(detID))/((Double_t)GetNoStripsY(detID)); // radius coverage per y strip
@@ -207,6 +219,10 @@ void DetectorInfo::CalcHitPosition(Int_t detID, Int_t stripx, Int_t stripy, Doub
 
     vdet = vpix-vori;
 
+    vdet.RotateZ(-GetRotationZ(detID));
+    vdet.RotateY(-GetRotationY(detID));
+    vdet.RotateX(-GetRotationX(detID));
+
 
   } else if(strcmp(detGeo[detID].type.c_str(), "DSSDtube")==0){
 
@@ -223,6 +239,17 @@ void DetectorInfo::CalcHitPosition(Int_t detID, Int_t stripx, Int_t stripy, Doub
     // vector from origin of detector to center of strip
     vdet.SetMag(hitRad);
     vdet.SetPhi(hitPhi);
+    
+    TVector3 vRot(1.0, 0.0, 0.0); // rotation vector
+
+    vRot.RotateZ(GetSize3(detID) + GetSize4(detID)/2.0);
+    vRot.RotateZ(-GetRotationY(detID));
+    vRot.RotateZ(90*deg);
+
+    vdet.RotateZ(-GetRotationY(detID));
+    vdet.Rotate(-GetRotationX(detID), vRot); // theta rotation
+    vdet.RotateZ(-(GetSize3(detID) + GetSize4(detID)/2.0));
+
 
 
   } else {
@@ -230,9 +257,6 @@ void DetectorInfo::CalcHitPosition(Int_t detID, Int_t stripx, Int_t stripy, Doub
     abort();
   }
 
-  vdet.RotateZ(-GetRotationZ(detID));
-  vdet.RotateY(-GetRotationY(detID));
-  vdet.RotateX(-GetRotationX(detID));
 
   TVector3 vhit=vdet+vcen;
 
@@ -473,6 +497,46 @@ void DetectorInfo::CheckInput()
   printf("CheckInput completed sucessfully!\n");
   //abort();
 }
+
+
+
+
+
+
+
+
+TRotation* DetectorInfo::GetRotationMatrix(Int_t d)
+{
+  
+  TVector3 vCen(1.0, 0.0, 0.0); // vector through center of detector
+  TVector3 vRot(0.0, 1.0, 0.0); // rotation vector
+
+  vCen.RotateZ(detGeo[d].size[3] + detGeo[d].size[4]/2.0);
+  vRot.RotateZ(detGeo[d].size[3] + detGeo[d].size[4]/2.0);
+
+  
+  TRotation* rotMat = new TRotation();
+  
+  rotMat->RotateZ(detGeo[d].size[3] + detGeo[d].size[4]/2.0);
+  rotMat->Rotate(detGeo[d].rotation[2], vCen); // around detectors axis
+  rotMat->Rotate(detGeo[d].rotation[0], vRot); // theta rotation
+  rotMat->RotateZ(detGeo[d].rotation[1]);      // phi rotation
+
+
+  return rotMat;
+
+}
+
+
+
+TRotation DetectorInfo::GetInverseRotationMatrix(Int_t d)
+{
+  TRotation rotMat = GetRotationMatrix(d)->Inverse();
+
+  return rotMat;
+}
+
+
 
 
 

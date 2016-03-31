@@ -2,10 +2,17 @@
 
 
 
-output_rootfile_makeEvents /mnt/raid/OEDO/philipp/events/132Sn_beamProfile.root
-output_rootfile_troja /mnt/raid/OEDO/philipp/geant/132Sn_beamProfile.root
-//output_rootfile_analysis /mnt/raid/OEDO/philipp/analysis/132Sn_beamProfile_woCorr.root
-output_rootfile_analysis /mnt/raid/OEDO/philipp/analysis/132Sn_beamProfile_withCorr.root
+//output_rootfile_reaction /mnt/raid/OEDO/philipp/events/reaction_output.root
+//output_textfile_fresco /home/philipp/programme/fresco_plotter/input/kathrin.out
+output_textfile_fresco /home/philipp/programme/fresco_plotter/input/carbon.out
+//output_textfile_fresco /home/philipp/programme/fresco_plotter/input/95Sr_dp_lab0.out
+
+output_rootfile_makeEvents /mnt/raid/OEDO/philipp/events/132Sn_00000.root
+output_rootfile_troja /mnt/raid/OEDO/philipp/geant/132Sn_00020.root
+output_rootfile_analysis /mnt/raid/OEDO/philipp/analysis/132Sn_00020.root
+
+//input_textfile_geometry /home/philipp/programme/doAll/detector_geometry.txt
+input_textfile_geometry /home/philipp/sim/troja/detector_geometry.txt
 
 // give the root file with oedo beam profile
 //beam_profile_file_oedo /mnt/raid/OEDO/OEDO_Matsushita/132Sn/3rd_order/oedo_132sn_10MeV.root
@@ -22,7 +29,7 @@ target_A 2
 target_Z 1
 light_A 1 
 light_Z 1 //outgoing Z needs to be equal to target Z, a.t.m. !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-number_of_states 3
+number_of_states 2
 max_excitation_energy 4.0
 
 // beam energy per nucleon in MeV/u
@@ -39,15 +46,12 @@ beam_profile_angular_b
 
 
 // for analysis:
-resolution_target_x 0.0
+resolution_target_x 0.0 // mm
 resolution_target_y 0.0
 resolution_target_z 0.0
-resolution_target_a 0.0
+resolution_target_a 0.0 // mrad
 resolution_target_b 0.0
-resolution_detector1_x 0.0
-resolution_detector1_y 0.0
-resolution_detector1_z 0.0
-resolution_detector1_e 0.0
-resolution_detector2_e 0.0
-resolution_beam_e 0.0
+resolution_beam_e 0.0  // MeV 
+
+
 

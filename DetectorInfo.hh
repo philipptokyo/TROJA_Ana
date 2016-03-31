@@ -114,6 +114,9 @@ Double_t GetResPar(Int_t d, Int_t p) const { return detGeo[d].resPar[p] ;}
 
     TRandom3* GetRandomizer() { return fRandomizer; }
 
+    TRotation* GetRotationMatrix(Int_t d);
+    TRotation GetInverseRotationMatrix(Int_t d);
+
 
     // setter
     
