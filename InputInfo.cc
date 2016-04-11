@@ -14,8 +14,16 @@ InputInfo::InputInfo(){
         fLightA=1;
         fLightZ=1;
         fNumberOfStates=1;
-        fMaxExEnergy=0.0;
+        //fMaxExEnergy=0.0;
+        for(Int_t s=0; s<maxNumberOfStates+1; s++){
+          fStateEnergy[s]=0.0;
+        }
 	fBeamEnergy=10.0; // in MeV/u
+
+        fAngleMin=0.0;
+        fAngleMax=TMath::Pi();
+        fElasticDownscale=0.0;
+        fIncludeElastic=false;
 
         fHaveOedoSimFileName=false;
         
@@ -65,7 +73,7 @@ void InputInfo::parse(char filename[100]){
 	Int_t counter=0;
 	const Int_t stopper=10000; 
 	
-	const Int_t maxArg=2;
+	const Int_t maxArg = 2+maxNumberOfStates;
 	char temp[maxArg][500];
 	
 	
@@ -108,6 +116,7 @@ void InputInfo::parse(char filename[100]){
 		}
 		else if(strcmp(temp[0],"output_textfile_fresco")==0)  {
 			strcpy(fOutFileNameFresco,temp[1]);
+                        fHaveFrescoFileName = true;
 			cout << "Output file of fresco is '" << fOutFileNameFresco << "'" << endl;
 		}
 		else if(strcmp(temp[0],"output_rootfile_makeEvents")==0){
@@ -128,7 +137,7 @@ void InputInfo::parse(char filename[100]){
 		}
 		else if(strcmp(temp[0],"beam_profile_file_oedo")==0){
 			strcpy(fOedoSimFileName,temp[1]);
-                        fHaveOedoSimFileName=true;
+                        fHaveOedoSimFileName = true;
 			cout << "Root file name with OEDO beam profile is set to " << fOedoSimFileName << endl;
 		}
                 // general parameter for all programs
@@ -161,13 +170,33 @@ void InputInfo::parse(char filename[100]){
                         fLightZ=atof(temp[1]);
                         cout << "Light ejectile charge Z is set to '" << fLightZ << "' e" << endl;
                 }
-               else if(strcmp(temp[0],"number_of_states")==0){
+                else if(strcmp(temp[0],"states")==0){
                         fNumberOfStates=atof(temp[1]);
                         cout << "Number of states in heavy ejectile is set to " << fNumberOfStates << endl;
+                        for(Int_t s=0; s<fNumberOfStates; s++){
+                          fStateEnergy[s+1]=atof(temp[2+s]);
+                          cout << "State " << s+1 << " at energy " << fStateEnergy[s+1] << " MeV, ";
+                        }
+                        cout << endl;
                 }
-               else if(strcmp(temp[0],"max_excitation_energy")==0){
-                        fMaxExEnergy=atof(temp[1]);
-                        cout << "Highest excitation energy in heavy ejectile is set to " << fMaxExEnergy << " MeV" << endl;
+                //else if(strcmp(temp[0],"number_of_states")==0){
+                //        fNumberOfStates=atof(temp[1]);
+                //        cout << "Number of states in heavy ejectile is set to " << fNumberOfStates << endl;
+                //}
+                //else if(strcmp(temp[0],"max_excitation_energy")==0){
+                //        fMaxExEnergy=atof(temp[1]);
+                //        cout << "Highest excitation energy in heavy ejectile is set to " << fMaxExEnergy << " MeV" << endl;
+                //}
+                else if(strcmp(temp[0],"theta_range_CM")==0){
+                  fAngleMin=atof(temp[1])/180.0*TMath::Pi();
+                  fAngleMax=atof(temp[2])/180.0*TMath::Pi();
+                  cout << "Theta angles of recoiled particles in CM will be generated in the range from " << fAngleMin << " rad to " << fAngleMax << " rad." << endl;
+                }
+                else if(strcmp(temp[0],"include_elastic_downscaled")==0){
+                  fElasticDownscale = TMath::Power(10.0, atof(temp[1]));
+                  fIncludeElastic=true;
+                  cout << "Elastic scattering will be included with a downscaling factor of " << fElasticDownscale << endl;
+
                 }
 		else if(strcmp(temp[0],"beam_energy")==0){
 			fBeamEnergy=atof(temp[1]);
