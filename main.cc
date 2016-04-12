@@ -243,6 +243,7 @@ Int_t main(Int_t argc, char **argv){
   // define tree
   TTree* treeAnalysis = new TTree();
 
+  treeAnalysis->Branch("eventNumber", &eventNumber, "eventNumber/I");
   // write generated data to tree
   // these values are with resolutions!!!!!!!!!!!!!
   treeAnalysis->Branch("genLightEnergy", &genLightEnergy, "genLightEnergy/D");
@@ -261,6 +262,7 @@ Int_t main(Int_t argc, char **argv){
   sprintf(tmpName, "simDetectorEnergy[%d]/D", maxDetectors);
   treeAnalysis->Branch("simDetectorEnergyLoss", detEnergyLoss, tmpName);
   treeAnalysis->Branch("simDetectorEnergyLossNotSmeared", detEnergyLossNotSmeared, tmpName);
+  treeAnalysis->Branch("simLightKinEnergy", &energyKinLight, "simLightEnergy/D"); // sum of detector energy losses
 
   treeAnalysis->Branch("simFIx", &FIx, "simFIx/D");
   treeAnalysis->Branch("simFIy", &FIy, "simFIy/D");
@@ -272,7 +274,6 @@ Int_t main(Int_t argc, char **argv){
   treeAnalysis->Branch("detStripY", detStripY, tmpName);
 
 
-  treeAnalysis->Branch("simLightKinEnergy", &energyKinLight, "simLightEnergy/D"); // sum of detector energy losses
   
   treeAnalysis->Branch("simLightThetaLab", &thetaLightLab, "simLightThetaLab/D");
   treeAnalysis->Branch("simLightThetaCM", &thetaLightCM, "simLightThetaCM/D");
@@ -490,9 +491,14 @@ Int_t main(Int_t argc, char **argv){
     lLight.SetVect(vLight);
     lLight.SetE(energyTotLight);
 
+    TLorentzVector lL=lLight;
+
     lLight.Boost(-vCm);
 
-    thetaLightCM=lLight.Theta();
+    //thetaLightCM=lLight.Theta();
+
+    lL.Boost(vCm);
+    thetaLightCM=lL.Theta();
 
     hThetaLab->Fill(thetaLightLab*180.0/TMath::Pi());
     hThetaCM->Fill(thetaLightCM*180.0/TMath::Pi());
@@ -573,17 +579,17 @@ Int_t main(Int_t argc, char **argv){
   TF1* fit1 = new TF1("gaus1", "gaus(0)", -5, 1);
   TF1* fit2 = new TF1("gaus2", "gaus(0)", -5, 1);
 
-  fit1->SetParameters(100, -4, 0.1);
+  fit1->SetParameters(100, -2, 0.1);
   fit2->SetParameters(100, 0, 0.1);
 
   fit1->SetParLimits(0,0,1000000);
-  fit1->SetParLimits(1,-4.5,-3.5);
+  fit1->SetParLimits(1,-4.5,-1.5);
   fit1->SetParLimits(2,0.0,1.0  );
   fit2->SetParLimits(0,0,1000000);
   fit2->SetParLimits(1,-0.5,0.5);
   fit2->SetParLimits(2,0.0,1.0  );
 
-  hMiss->Fit(fit1 , "","", -4.5, -3.5);
+  hMiss->Fit(fit1 , "","", -4.5, -1.5);
   hMiss->Fit(fit2 , "","", -0.5, 0.5);
 
   fit1->Draw("same"); 
