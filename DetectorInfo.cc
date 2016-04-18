@@ -312,15 +312,17 @@ void DetectorInfo::Parse(string filename)
 
   //parse input file line-wise
   std::string line;
-  Int_t counter=0;
-  const Int_t stopper=10000;
+  Int_t counter=-1;
+  const Int_t stopper=1000000;
 
-  const Int_t maxArg=7;
+  const Int_t maxArg=8;
   char temp[maxArg][500];
 
 
 
   while(fin.good())  {
+
+    counter++;
 
     //reset values
     for(Int_t i=0; i< maxArg; i++){temp[i][0]='\0';}
@@ -406,14 +408,13 @@ void DetectorInfo::Parse(string filename)
       printf("\n");
     }
     else {
-      printf("Cannot read your input keyword '%s' in line %d. Aborting program.\n", temp[0], counter);
+      printf("Error in DetectorInfo: Cannot read your input keyword '%s' in line %d. Aborting program.\n", temp[0], counter);
       abort();
     }
 
     // todo: add resolution information
 
     //count lines
-    counter++;
     if(counter>stopper){
       printf("Reached %d lines in file '%s'! Stopping!\n", counter, filename.c_str());
       abort();
