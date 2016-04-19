@@ -42,7 +42,8 @@ typedef struct _dat
 
   //Int_t noOfDet[maxDetectors];
   Int_t fIDetID; // ID of detector with first interaction point
-
+  
+  Int_t hitMul; // number of hits, i.e. number of detectors with energy deposition
   Int_t haveHit[maxDetectors]; // flag if detector was hit by particle
   Int_t haveHitID[maxDetectors]; // aux, for quicker debugging... 
   

@@ -235,6 +235,7 @@ Int_t main(Int_t argc, char **argv){
   //TH2F* hMissTheta=new TH2F("hMissTheta", "Missing mass vs. theta proton", 360,0,180,1000,-20,20);
   
   TH2F* hdEE=new TH2F("hdEE", "delta E vs. E proton", 1000,0,10,100,0,5);
+  TH2F* hEth=new TH2F("hEth", "E proton vs. theta lab", 1800,0,180,500,0,50);
 
   TH1F* hThetaLab = new TH1F("hThetaLab","Theta Lab",1800,0,180);
   TH1F* hThetaCM = new TH1F("hThetaCM","Theta CM",1800,0,180);
@@ -522,6 +523,7 @@ Int_t main(Int_t argc, char **argv){
     //hMissTheta->Fill(vLight.Theta()*180.0/TMath::Pi(), miss);
 
     hdEE->Fill(energyKinLight,detEnergyLoss[firstDetID]);
+    hEth->Fill(thetaLightLab*180.0/TMath::Pi(), energyKinLight);
 
 
     energyKinProj/=(Float_t)projA; // MeV/u`
@@ -541,6 +543,7 @@ Int_t main(Int_t argc, char **argv){
 
   hMiss->Write("missingMass");
   hdEE->Write("dEE");
+  hEth->Write("Eth");
   hThetaLab->Write("hThetaLab");
   hThetaCM->Write("hThetaCM");
 
@@ -594,6 +597,13 @@ Int_t main(Int_t argc, char **argv){
 
   fit1->Draw("same"); 
   
+
+  TCanvas* canEth = new TCanvas();
+  canEth->cd();
+  hEth->Draw("colz");
+
+
+
   //printf("Integrals: Fit1 = %f, Fit2 = %f\n", fit1->Integral(), fit2->Integral()); 
   
 
