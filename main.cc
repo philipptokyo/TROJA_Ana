@@ -186,10 +186,11 @@ Int_t main(Int_t argc, char **argv){
   Double_t        recoPosY[maxDetectors]={NAN};
   Double_t        recoPosZ[maxDetectors]={NAN};
   // for bug fixing:
+  Int_t           firstDetID = -1; // find out which detector fired first
   Double_t        FIx=0.0; // first interaction point
   Double_t        FIy=0.0;
   Double_t        FIz=0.0;
-  Int_t           FIdetID=-1;
+  Int_t           FIdetID=-1; //from sim file
   //Int_t           detHitID[maxDetectors]={-1};
   
 //  tree->SetBranchAddress("energy", &energy); //simulation input
@@ -234,7 +235,7 @@ Int_t main(Int_t argc, char **argv){
   TH1F* hMiss=new TH1F("hMiss", "Missing Mass", 600, -5.0, 1.0);
   //TH2F* hMissTheta=new TH2F("hMissTheta", "Missing mass vs. theta proton", 360,0,180,1000,-20,20);
   
-  TH2F* hdEE=new TH2F("hdEE", "delta E vs. E proton", 1000,0,10,100,0,5);
+  TH2F* hdEE=new TH2F("hdEE", "delta E vs. E proton", 1000,0,20,100,0,5);
   TH2F* hEth=new TH2F("hEth", "E proton vs. theta lab", 1800,0,180,500,0,50);
 
   TH1F* hThetaLab = new TH1F("hThetaLab","Theta Lab",1800,0,180);
@@ -268,6 +269,8 @@ Int_t main(Int_t argc, char **argv){
   treeAnalysis->Branch("simFIx", &FIx, "simFIx/D");
   treeAnalysis->Branch("simFIy", &FIy, "simFIy/D");
   treeAnalysis->Branch("simFIz", &FIz, "simFIz/D");
+  treeAnalysis->Branch("simFIdetID", &FIdetID, "simFIdetID/I");
+  treeAnalysis->Branch("anaFIdetID", &firstDetID, "anaFIdetID/I");
 
   sprintf(tmpName, "detStripX[%d]/I", maxDetectors);
   treeAnalysis->Branch("detStripX", detStripX, tmpName);
@@ -332,6 +335,8 @@ Int_t main(Int_t argc, char **argv){
     //todo: reset vairables!
     miss=1000.0;
     energyKinLight=0.0;
+    FIdetID=-1;
+    firstDetID=-1;
 
     for(Int_t p=0;p<3;p++){
       simDetectorHitPos[p]=0.0;
@@ -351,7 +356,7 @@ Int_t main(Int_t argc, char **argv){
     treeBeam->GetEvent(e); // todo: make tree friend instead
     
     Int_t detHitSum = 0; // aux
-    Int_t firstDetID = -1; // find out which detector fired first
+    //Int_t firstDetID = -1; // find out which detector fired first
     //Int_t seconDetID = -1; // find out which detector fired second 
 
     // sum up all energy losses
