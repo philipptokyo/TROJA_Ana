@@ -214,6 +214,8 @@ Int_t main(Int_t argc, char **argv){
 
 
   // define output of analysis
+  Int_t detHitMul=0; // detector hit multiplicity
+  Int_t detHitMul3 = 0; // aux, count events with more than 2 detectors fired
   Double_t gammaProj=0.0, gammaLight=0.0;
   Double_t energyTotProj=0.0, energyTotLight=0.0;
 //  Double_t energyKinHeavy=0.0, energyTotHeavy=0.0, gammaHeavy=0.0, momentumHeavy=0.0;
@@ -235,7 +237,7 @@ Int_t main(Int_t argc, char **argv){
   TH1F* hMiss=new TH1F("hMiss", "Missing Mass", 600, -5.0, 1.0);
   //TH2F* hMissTheta=new TH2F("hMissTheta", "Missing mass vs. theta proton", 360,0,180,1000,-20,20);
   
-  TH2F* hdEE=new TH2F("hdEE", "delta E vs. E proton", 1000,0,20,100,0,5);
+  TH2F* hdEE=new TH2F("hdEE", "delta E vs. E proton", 1000,0,20,100,0,8);
   TH2F* hEth=new TH2F("hEth", "E proton vs. theta lab", 1800,0,180,500,0,50);
 
   TH1F* hThetaLab = new TH1F("hThetaLab","Theta Lab",1800,0,180);
@@ -285,6 +287,8 @@ Int_t main(Int_t argc, char **argv){
 
 
   // new analysis data
+  
+  treeAnalysis->Branch("anaDetectorHitMul", &detHitMul, "anaDetectorHitMul/I");
   sprintf(tmpName, "anaDetectorHitPos[3]/D");
   treeAnalysis->Branch("anaDetectorHitPos", simDetectorHitPos, tmpName);
   
@@ -355,13 +359,13 @@ Int_t main(Int_t argc, char **argv){
     tree->GetEvent(e);
     treeBeam->GetEvent(e); // todo: make tree friend instead
     
-    Int_t detHitSum = 0; // aux
+    detHitMul = 0; // detector hit multiplicity
     //Int_t firstDetID = -1; // find out which detector fired first
     //Int_t seconDetID = -1; // find out which detector fired second 
 
     // sum up all energy losses
     for(Int_t d=0; d<maxDetectors; d++){
-      detHitSum += detHit[d];
+      detHitMul += detHit[d];
       if(detHit[d]==1){
 
         energyKinLight+=detEnergyLoss[d];
@@ -380,11 +384,15 @@ Int_t main(Int_t argc, char **argv){
       }
     }
     
-    if(detHitSum==0){
+    if(detHitMul==0){
       continue;
     }
-    else if(detHitSum>2){
-      printf("Warning: more than 2 detectors fired in event %d! Such events are not handled properly!\n", e);
+    else if(detHitMul>2){
+      //printf("Warning: more than 2 detectors fired in event %d! Such events are not handled properly!\n", e);
+      detHitMul3++;
+
+      // todo: a more sophisticated routine to find the first hit
+      // but second order problem, it happens in about 700 events out of 10 mio! 
     }
 
     goodEvents++;
@@ -538,6 +546,7 @@ Int_t main(Int_t argc, char **argv){
   }
 
   cout << nevents << " events processed! " << goodEvents << " events used in analysis! Ratio: " << (Float_t)goodEvents/(Float_t)nevents*100.0 << "%" << endl;
+  cout << detHitMul3 << " events with detector hit multiplicity 3 or larger (angle reconstruction might not be correct for these events)" << endl;
 
   watch->Stop();
   cout << "Took: real time " << watch->RealTime() << "sec., CPU time " << watch->CpuTime() << " sec." << endl;

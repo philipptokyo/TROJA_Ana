@@ -147,7 +147,7 @@ void DetectorInfo::CalcStripNumbers(Int_t detID, Double_t hx, Double_t hy, Doubl
   TVector3 vdet=vhit-vcen; // hit with respect to center of detector
   
 
-  if(strcmp(detGeo[detID].type.c_str(), "DSSDbox")==0){
+  if( (strcmp(detGeo[detID].type.c_str(), "DSSDbox")==0) || (strcmp(detGeo[detID].type.c_str(), "CsIbox")==0) ){
 
     vdet.RotateX(GetRotationX(detID));
     vdet.RotateY(GetRotationY(detID));
@@ -208,7 +208,7 @@ void DetectorInfo::CalcHitPosition(Int_t detID, Int_t stripx, Int_t stripy, Doub
   TVector3 vcen(GetCenterX(detID), GetCenterY(detID), GetCenterZ(detID)); // vector from origin to center detector
   TVector3 vdet(0.0, 1.0, 0.0);
 
-  if(strcmp(detGeo[detID].type.c_str(), "DSSDbox")==0){
+  if( (strcmp(detGeo[detID].type.c_str(), "DSSDbox")==0) || (strcmp(detGeo[detID].type.c_str(), "CsIbox")==0) ){
 
     Double_t pixx = (Double_t)stripx * (GetSize0(detID)/GetNoStripsX(detID)) + (GetSize0(detID)/GetNoStripsX(detID))/2.0;
     Double_t pixy = (Double_t)stripy * (GetSize1(detID)/GetNoStripsY(detID)) + (GetSize1(detID)/GetNoStripsY(detID))/2.0;
@@ -457,7 +457,7 @@ void DetectorInfo::CheckInput()
   for(Int_t d=0; d<fNoOfDet; d++){
     Double_t checkSum=0.0;
     
-    if( !((strcmp(detGeo[d].type.c_str(),"DSSDbox")==0) || (strcmp(detGeo[d].type.c_str(),"DSSDtube")==0)) ){
+    if( !((strcmp(detGeo[d].type.c_str(),"DSSDbox")==0) || (strcmp(detGeo[d].type.c_str(),"DSSDtube")==0) || (strcmp(detGeo[d].type.c_str(),"CsIbox")==0))){
       printf("Error: invalid detector type '%s'!\n", GetType(d).c_str());
       abort();
     }
