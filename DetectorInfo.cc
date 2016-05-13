@@ -458,7 +458,7 @@ void DetectorInfo::CheckInput()
     Double_t checkSum=0.0;
     
     if( !((strcmp(detGeo[d].type.c_str(),"DSSDbox")==0) || (strcmp(detGeo[d].type.c_str(),"DSSDtube")==0) || (strcmp(detGeo[d].type.c_str(),"CsIbox")==0))){
-      printf("Error: invalid detector type '%s'!\n", GetType(d).c_str());
+      printf("Error: invalid detector type '%s' for detector %d!\n", GetType(d).c_str(), d);
       abort();
     }
     
@@ -481,7 +481,7 @@ void DetectorInfo::CheckInput()
     }
     checkSum = detGeo[d].size[3] * detGeo[d].size[4];
     if( (strcmp(detGeo[d].type.c_str(),"DSSDtube")==0) && TMath::IsNaN(checkSum) ){
-      printf("Error: invalid angle for type 'DSSDtube': phi_start = %f, phi_D = %f\n", detGeo[d].size[3], detGeo[d].size[4]);
+      printf("Error: invalid angle for detector %d type 'DSSDtube': phi_start = %f, phi_D = %f\n", d, detGeo[d].size[3], detGeo[d].size[4]);
       abort();
     }
     
