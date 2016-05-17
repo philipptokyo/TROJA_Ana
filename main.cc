@@ -424,9 +424,15 @@ Int_t main(Int_t argc, char **argv){
 //    theta/=180.0/TMath::Pi(); // is actually not used anymore
     
     // smear out data with detector position resolutions
-    beamX=randomizer->Gaus(beamX, info->fResTargetX); // in mm
-    beamY=randomizer->Gaus(beamY, info->fResTargetY);
-    beamZ=randomizer->Gaus(beamZ, info->fResTargetZ);
+    if(info->NoBeamTracking()){
+      beamX=0.0;
+      beamY=0.0;
+      beamZ=0.0;
+    }else{
+      beamX=randomizer->Gaus(beamX, info->fResTargetX); // in mm
+      beamY=randomizer->Gaus(beamY, info->fResTargetY);
+      beamZ=randomizer->Gaus(beamZ, info->fResTargetZ);
+    }
     
     // obsolete: 
 //    x=randomizer->Gaus(x, info->fResDet1X); 
@@ -447,7 +453,9 @@ Int_t main(Int_t argc, char **argv){
     // at the moment from simulation input
     // todo: separate simulation including incoming tracking
 
-    energyKinProj = randomizer->Gaus(energyKinProj, info->fResBeamE);
+    if(!info->NoBeamTracking()){
+      energyKinProj = randomizer->Gaus(energyKinProj, info->fResBeamE);
+    }
       
     gammaProj = (energyKinProj)/massProj + 1.0;
     //Float_t betaProj = TMath::Sqrt(1.0-(1.0/(gammaProj*gammaProj))); //just for cross checking
@@ -455,14 +463,15 @@ Int_t main(Int_t argc, char **argv){
     energyTotProj = massProj*gammaProj; //total energy
     
      
-    TVector3 vProj(0.0, 0.0, momentumProj); 
-    vProj.SetMagThetaPhi(momentumProj, beamTheta, beamPhi); // comment out this line to see the effect of no beam profile correction
+    TVector3 vProj(0.0, 0.0, 1.0); 
+    if(!info->NoBeamTracking()){
+      vProj.SetMagThetaPhi(1.0, beamTheta, beamPhi);                                         // comment out this line to see the effect of no beam profile correction
     
-    // rotate by beam angular resolution
-    vProj.RotateY(randomizer->Gaus(0.0, (info->fResTargetA))); // resolutions in mrad
-    vProj.RotateX(randomizer->Gaus(0.0, (info->fResTargetB)));
-
-
+      // rotate by beam angular resolution
+      vProj.RotateY(randomizer->Gaus(0.0, (info->fResTargetA)/1000.0)); // resolutions in mrad
+      vProj.RotateX(randomizer->Gaus(0.0, (info->fResTargetB)/1000.0));
+    }
+    vProj.SetMag(momentumProj);
 
     // center of mass kinematic values
     Float_t energyCm = TMath::Sqrt(massProj*massProj + massTarget*massTarget + 2.0*energyTotProj*massTarget);
@@ -606,8 +615,8 @@ Int_t main(Int_t argc, char **argv){
   fit2->SetParLimits(1,-0.5,0.5);
   fit2->SetParLimits(2,0.0,1.0  );
 
-  hMiss->Fit(fit1 , "","", -4.5, -1.5);
-  hMiss->Fit(fit2 , "","", -0.5, 0.5);
+  hMiss->Fit(fit1 , "","", -2.3, -1.8);
+  hMiss->Fit(fit2 , "","", -0.4, 0.4);
 
   fit1->Draw("same"); 
   

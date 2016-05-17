@@ -40,6 +40,7 @@ class InputInfo
         Bool_t ProfileBeamY(){return fProfileY;};
         Bool_t ProfileBeamA(){return fProfileA;};
         Bool_t ProfileBeamB(){return fProfileB;};
+        Bool_t NoBeamTracking(){return fNoBeamTracking;};
         Bool_t IncludeElastic(){return fIncludeElastic;}
 	
         //analysis related
@@ -65,6 +66,7 @@ class InputInfo
         Bool_t fHaveOedoSimFileName; 
         Bool_t fHaveFrescoFileName;
         Bool_t fProfileE, fProfileX, fProfileY, fProfileA, fProfileB;
+        Bool_t fNoBeamTracking;
         Bool_t fIncludeElastic; 
         	
 	

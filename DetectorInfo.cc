@@ -392,14 +392,14 @@ void DetectorInfo::Parse(string filename)
     else if(strcmp(temp[0],"type")==0){
       Int_t index = atoi(temp[1]);
       SetType(index, temp[2]);
-      printf("Got type '%s'.\n", GetType(index).c_str());
+      printf("Got for detector %d type '%s'.\n", index, GetType(index).c_str());
     }
     else if(strcmp(temp[0],"resolution")==0){
       Int_t index = atoi(temp[1]);
       Int_t type  = atoi(temp[2]);
       
       SetResType(index, type);
-      printf("Got Resolution type %d, parameter: ", GetResType(index));
+      printf("Got for detector %d Resolution type %d, parameter: ", index, GetResType(index));
       
       for(Int_t p=0; p<GetResNoPars(index); p++){
         SetResPar(index, p, atof(temp[3+p]));

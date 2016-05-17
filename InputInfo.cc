@@ -31,7 +31,8 @@ InputInfo::InputInfo(){
         fProfileX=false;	
         fProfileY=false;	
         fProfileA=false;	
-        fProfileB=false;	
+        fProfileB=false;
+        fNoBeamTracking=false;	
 
         fResTargetX=0.0;
         fResTargetY=0.0;  
@@ -224,6 +225,10 @@ void InputInfo::parse(char filename[100]){
 			cout << "Beam profile - b angle (dy) - requested " << endl;
 		}
                 // analysis related stuff
+		else if(strcmp(temp[0],"no_beam_tracking")==0){
+                        fNoBeamTracking=true;
+			cout << "Beam tracking will not be performed " << endl;
+		}
 		else if(strcmp(temp[0],"resolution_target_x")==0){
 			fResTargetX=atof(temp[1]);
 			cout << "Resolution of target X position is set to '" << fResTargetX << "' mm (sigma of a Gaussian)" << endl;
