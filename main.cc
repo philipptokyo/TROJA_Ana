@@ -637,9 +637,9 @@ Int_t main(Int_t argc, char **argv){
   
   // if histograms shall be plotted, run theApp
   // otherwise program closes
-  theApp->Run();
-//  fileAnalysis->Close();
-//  delete theApp;  
+//  theApp->Run();
+  fileAnalysis->Close();
+  delete theApp;  
   
   return 0;
 }

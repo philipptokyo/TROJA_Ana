@@ -26,6 +26,8 @@ InputInfo::InputInfo(){
         fIncludeElastic=false;
 
         fHaveOedoSimFileName=false;
+        fHaveFrescoFileName=false;
+        fFrescoHeaderOnly=false;
         
         fProfileE=false;	
         fProfileX=false;	
@@ -119,6 +121,10 @@ void InputInfo::parse(char filename[100]){
 			strcpy(fOutFileNameFresco,temp[1]);
                         fHaveFrescoFileName = true;
 			cout << "Output file of fresco is '" << fOutFileNameFresco << "'" << endl;
+		}
+		else if(strcmp(temp[0],"fresco_header_only")==0)  {
+                        fFrescoHeaderOnly = true;
+			cout << "Only Header information is taken from fresco file " << endl;
 		}
 		else if(strcmp(temp[0],"output_rootfile_makeEvents")==0){
 			strcpy(fOutFileNameMakeEvents,temp[1]);
