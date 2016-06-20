@@ -71,9 +71,11 @@ Int_t main(Int_t argc, char **argv){
 
   InputInfo* info = new InputInfo();
   info->parse(argv[1]);
+  cout << endl;
 
   DetectorInfo* detInfo = new DetectorInfo();
   detInfo->Parse(info->fInFileNameGeometry);
+  cout << endl;
   
   TRandom3* randomizer = new TRandom3();
   randomizer->SetSeed(0); 
@@ -312,6 +314,7 @@ Int_t main(Int_t argc, char **argv){
   watch->Start();
 
   Analysis* ana = new Analysis(info, detInfo);
+  cout << endl;
   
 //  Int_t nevents=tree->GetEntries();
 //  cout << "Number of entries found in tree: " << nevents << endl;
@@ -567,6 +570,10 @@ Int_t main(Int_t argc, char **argv){
  
   ana->Analysis1();
   
+  //ana->GetCuts();
+  
+  ana->Analysis2();
+  
   watch->Stop();
   cout << "Took: real time " << watch->RealTime() << "sec., CPU time " << watch->CpuTime() << " sec." << endl;
   cout << endl;
@@ -653,7 +660,7 @@ Int_t main(Int_t argc, char **argv){
 //    theApp->Run();
 //  }else{
 //    fileAnalysis->Close();
-//    delete theApp;  
+    delete theApp;  
 //  }
   return 0;
 }

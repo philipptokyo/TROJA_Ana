@@ -6,6 +6,7 @@
 #include "InputInfo.hh"
 #include "DetectorInfo.hh"
 
+#define maxCuts 10
 
 class Analysis
 {
@@ -25,6 +26,8 @@ class Analysis
 
 
   private:
+
+    void ProcessDetectorHits();
     
     InputInfo* info;
     DetectorInfo* detInfo;
@@ -78,7 +81,7 @@ class Analysis
     Double_t thetaLightLab, thetaLightCM, phiLight;
     Double_t miss;
 
-
+    TCutG* cut[maxCuts];
 
 };
 

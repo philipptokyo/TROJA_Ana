@@ -62,7 +62,7 @@ void Analysis::ResetVariables(){
 
   // define output of analysis
   detHitMul=0; // detector hit multiplicity
-  detHitMul3 = 0; // aux, count events with more than 2 detectors fired
+  //detHitMul3 = 0; // aux, count events with more than 2 detectors fired
   gammaProj=0.0;
   gammaLight=0.0;
   energyTotProj=0.0;
@@ -243,7 +243,7 @@ Bool_t Analysis::Init(){
 
   Int_t nevents=tree->GetEntries();
   cout << "Number of entries found in tree: " << nevents << endl;
-  cout << "Starting analysis ..." << endl;
+  //cout << "Starting analysis ..." << endl;
 
   Int_t neventsBeam=treeBeam->GetEntries();
   if(nevents!=neventsBeam){
@@ -267,28 +267,42 @@ Bool_t Analysis::Init(){
 
 
 
+void Analysis::ProcessDetectorHits(){  // private
+
+  detHitMul = 0; // detector hit multiplicity
+  //Int_t firstDetID = -1; // find out which detector fired first
+  //Int_t seconDetID = -1; // find out which detector fired second 
+
+  // sum up all energy losses
+  for(Int_t d=0; d<maxDetectors; d++){
+    detHitMul += detHit[d];
+    if(detHit[d]==1){
+
+      energyKinLight+=detEnergyLoss[d];
+
+      // reconstruct position from strip number
+      detInfo->CalcHitPosition(d, detStripX[d], detStripY[d], recoPosX[d], recoPosY[d], recoPosZ[d]);
+
+      if(detInfo->IsInFront(d, firstDetID)){
+        firstDetID = d;
+      }
+      //else{
+      //  seconDetID = d;
+      //}
 
 
+    }
+  }
+
+  //simDetectorHitPos[0] = FIx;
+  //simDetectorHitPos[1] = FIy;
+  //simDetectorHitPos[2] = FIz;
+  simDetectorHitPos[0] = recoPosX[firstDetID];
+  simDetectorHitPos[1] = recoPosY[firstDetID];
+  simDetectorHitPos[2] = recoPosZ[firstDetID];
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+} // ProcessDetectorHits
 
 
 
@@ -312,30 +326,7 @@ void Analysis::Analysis1(){
     tree->GetEvent(e);
     //treeBeam->GetEvent(e); // todo: make tree friend instead
 
-    detHitMul = 0; // detector hit multiplicity
-    //Int_t firstDetID = -1; // find out which detector fired first
-    //Int_t seconDetID = -1; // find out which detector fired second 
-
-    // sum up all energy losses
-    for(Int_t d=0; d<maxDetectors; d++){
-      detHitMul += detHit[d];
-      if(detHit[d]==1){
-
-        energyKinLight+=detEnergyLoss[d];
-
-        // reconstruct position from strip number
-        detInfo->CalcHitPosition(d, detStripX[d], detStripY[d], recoPosX[d], recoPosY[d], recoPosZ[d]);
-
-        if(detInfo->IsInFront(d, firstDetID)){
-          firstDetID = d;
-        }
-        //else{
-        //  seconDetID = d;
-        //}
-
-
-      }
-    }
+    ProcessDetectorHits(); // private function, manipulates private variables only
 
     if(detHitMul==0){
       continue;
@@ -352,16 +343,6 @@ void Analysis::Analysis1(){
 
     //printf("event %d, have %d detector hits with sum energy %f\n", e, detHitSum, energyKinLight);
 
-    //simDetectorHitPos[0] = FIx;
-    //simDetectorHitPos[1] = FIy;
-    //simDetectorHitPos[2] = FIz;
-    //simDetectorHitPos[0] = recoPosX[FIdetID];
-    //simDetectorHitPos[1] = recoPosY[FIdetID];
-    //simDetectorHitPos[2] = recoPosZ[FIdetID];
-    simDetectorHitPos[0] = recoPosX[firstDetID];
-    simDetectorHitPos[1] = recoPosY[firstDetID];
-    simDetectorHitPos[2] = recoPosZ[firstDetID];
-
 
     hdEE->Fill(energyKinLight,detEnergyLoss[firstDetID]);
 
@@ -377,13 +358,9 @@ void Analysis::Analysis1(){
   fileAnalysis->cd();
   treeAnalysis1->Write("analysis1");
 
-  hdEE->Write("dEE");
+//  hdEE->Write("dEE");
 
-  printf("Analysis1: Analyzed events writen to file '%s'\n", info->fOutFileNameAnalysis);
-
-
-
-
+  printf("Analysis1: Analyzed events writen to file '%s'\n\n", info->fOutFileNameAnalysis);
 
 
 
@@ -391,19 +368,238 @@ void Analysis::Analysis1(){
 
 
 void Analysis::Analysis2(){
+ 
+  TRandom3* randomizer = new TRandom3();
+  randomizer->SetSeed(0);
+ 
 
-//  // define histograms
-//  //TH1F* hMiss=new TH1F("hMiss", "Missing Mass", 1000, -20.0, 20.0);
-//  //TH1F* hMiss=new TH1F("hMiss", "Missing Mass", 2000, -10.0, 10.0);
-//  //TH1F* hMiss=new TH1F("hMiss", "Missing Mass", 2000, -6.0, 1.0);
-////  TH1F* hMiss=new TH1F("hMiss", "Missing Mass", 600, -5.0, 1.0);
-//  //TH2F* hMissTheta=new TH2F("hMissTheta", "Missing mass vs. theta proton", 360,0,180,1000,-20,20);
-//
-//  TH2F* hdEE=new TH2F("hdEE", "delta E vs. E proton", 1000,0,20,100,0,8);
-//  TH2F* hEth=new TH2F("hEth", "E proton vs. theta lab", 1800,0,180,500,0,50);
-//
-//  TH1F* hThetaLab = new TH1F("hThetaLab","Theta Lab",1800,0,180);
-//  TH1F* hThetaCM = new TH1F("hThetaCM","Theta CM",1800,0,180);
+
+
+  TTree* treeHeader=(TTree*)fileBeam->Get("header");
+  if(!treeHeader){
+    cout << "TTree 'header' not found in makeEvents root file!" << endl;
+    //return 0;
+  }
+
+
+  Int_t projA=132;
+  //Float_t projMass=0.0, targetMass=0.0, lightMass=0.0, heavyMass=0.0, qValue=0.0;
+  Float_t massProj=0.0, massTarget=0.0, massLight=0.0, massHeavy=0.0, qValue=0.0;
+
+  treeHeader->SetBranchAddress("projA", &projA);
+  treeHeader->SetBranchAddress("projMass", &massProj);
+  treeHeader->SetBranchAddress("targetMass", &massTarget);
+  treeHeader->SetBranchAddress("lightMass", &massLight);
+  treeHeader->SetBranchAddress("heavyMass", &massHeavy);
+  treeHeader->SetBranchAddress("qValue", &qValue);
+
+  treeHeader->GetEntry(0);
+  printf("Obtained masses: projectile %f, target %f, light ejectile %f, heavy ejectile %f; Q-value %f\n", massProj, massTarget, massLight, massHeavy, qValue);
+
+
+
+
+
+
+
+
+
+
+
+
+  // define histograms
+  //TH1F* hMiss=new TH1F("hMiss", "Missing Mass", 1000, -20.0, 20.0);
+  //TH1F* hMiss=new TH1F("hMiss", "Missing Mass", 2000, -10.0, 10.0);
+  //TH1F* hMiss=new TH1F("hMiss", "Missing Mass", 2000, -6.0, 1.0);
+  TH1F* hMiss=new TH1F("hMiss", "Missing Mass", 600, -5.0, 1.0);
+  //TH2F* hMissTheta=new TH2F("hMissTheta", "Missing mass vs. theta proton", 360,0,180,1000,-20,20);
+
+  TH2F* hdEE=new TH2F("hdEE", "delta E vs. E proton", 1000,0,20,100,0,8);
+  TH2F* hEth=new TH2F("hEth", "E proton vs. theta lab", 1800,0,180,500,0,50);
+
+  TH1F* hThetaLab = new TH1F("hThetaLab","Theta Lab",1800,0,180);
+  TH1F* hThetaCM = new TH1F("hThetaCM","Theta CM",1800,0,180);
+
+
+  Int_t goodEvents=0;
+  Int_t nevents=tree->GetEntries();
+  
+  // reset the aux vaiable 
+  detHitMul3=0;
+  
+  for(Int_t e=0; e<nevents; e++){
+    
+    ResetVariables();
+
+    treeHeader->GetEntry(0); // todo: take these values from Kinematics/Nucleus/mass file
+
+    tree->GetEvent(e);
+    treeBeam->GetEvent(e); // todo: make tree friend instead
+    
+    ProcessDetectorHits();
+
+    if(detHitMul==0){
+      continue;
+    }
+    else if(detHitMul>2){
+      //printf("Warning: more than 2 detectors fired in event %d! Such events are not handled properly!\n", e);
+      detHitMul3++;
+
+      // todo: a more sophisticated routine to find the first hit
+      // but second order problem, it happens in about 700 events out of 10 mio! 
+    }
+
+    goodEvents++;
+    
+    // aux:
+    //Double_t x = FIx;
+    //Double_t y = FIy;
+    //Double_t z = FIz;
+
+    // take only events in backward direction
+    // in very forward direction are usually punch-troughs of protons through the detector
+  //    if(theta<90.0){
+  //    if(theta==0.0){
+  //      continue;
+  //    }
+      
+  //    theta/=180.0/TMath::Pi(); // is actually not used anymore
+    
+    // smear out data with detector position resolutions
+    if(info->NoBeamTracking()){
+      beamX=0.0;
+      beamY=0.0;
+      beamZ=0.0;
+    }else{
+      beamX=randomizer->Gaus(beamX, info->fResTargetX); // in mm
+      beamY=randomizer->Gaus(beamY, info->fResTargetY);
+      beamZ=randomizer->Gaus(beamZ, info->fResTargetZ);
+    }
+    
+
+
+    // projectile kinematics
+
+    energyKinProj*=(Float_t)projA; 
+    // Projectile data
+    // at the moment from simulation input
+    // todo: separate simulation including incoming tracking
+
+    if(!info->NoBeamTracking()){
+      energyKinProj = randomizer->Gaus(energyKinProj, info->fResBeamE);
+    }
+      
+    gammaProj = (energyKinProj)/massProj + 1.0;
+    //Float_t betaProj = TMath::Sqrt(1.0-(1.0/(gammaProj*gammaProj))); //just for cross checking
+    momentumProj = massProj*TMath::Sqrt(gammaProj*gammaProj-1.0); 
+    energyTotProj = massProj*gammaProj; //total energy
+    
+     
+    TVector3 vProj(0.0, 0.0, 1.0); 
+    if(!info->NoBeamTracking()){
+      vProj.SetMagThetaPhi(1.0, beamTheta, beamPhi);                                         // comment out this line to see the effect of no beam profile correction
+    
+      // rotate by beam angular resolution
+      vProj.RotateY(randomizer->Gaus(0.0, (info->fResTargetA)/1000.0)); // resolutions in mrad
+      vProj.RotateX(randomizer->Gaus(0.0, (info->fResTargetB)/1000.0));
+    }
+    vProj.SetMag(momentumProj);
+
+    // center of mass kinematic values
+    Float_t energyCm = TMath::Sqrt(massProj*massProj + massTarget*massTarget + 2.0*energyTotProj*massTarget);
+    Float_t betaCm = momentumProj/(energyTotProj+massTarget);
+    TVector3 vCm(vProj); // direction of projectile including beam profile
+    vCm.SetMag(betaCm);
+
+
+
+
+    // light ejectile kinematics
+
+    // get total energy and momentum of the light ejectile
+    
+    //energySum=energyLoss+energyTotal;
+    //gammaLight = energySum/massLight+1.0;   
+    gammaLight = energyKinLight/massLight+1.0;      // simulated
+    //gammaLight = genLightEnergy/massLight+1.0; // generated
+    //theta=genLightTheta; // generated theta
+   
+   
+    energyTotLight = gammaLight*massLight;
+    //energyTotLight = energyKinLight+massLight;
+    momentumLight = massLight*TMath::Sqrt(gammaLight*gammaLight-1.0);
+
+    //printf("lightTheta %f, lightEnergy %f \n", theta, energySum);
+    //printf("x %f, y %f, z %f, beamX %f, beamY %f, beamZ %f\n",x ,y, z, beamX, beamY, beamZ);
+    //TVector3 vLight(x-beamX, y-beamY, z-beamZ); //momentum direction of proton
+    TVector3 vLight(simDetectorHitPos[0]-beamX, simDetectorHitPos[1]-beamY, simDetectorHitPos[2]-beamZ); //momentum direction of proton
+    //printf("vLight.Mag %f\n", vLight.Mag());
+    vLight.SetMag(momentumLight);
+    //vLight.SetMagThetaPhi(momentumLight, theta, phi); // without beam position spread
+    
+    // for the root tree
+    thetaLightLab = vLight.Theta(); 
+    phiLight = vLight.Phi(); 
+
+    TLorentzVector lLight;
+    lLight.SetVect(vLight);
+    lLight.SetE(energyTotLight);
+
+    TLorentzVector lL=lLight;
+
+    lLight.Boost(-vCm);
+
+    //thetaLightCM=lLight.Theta();
+
+    lL.Boost(vCm);
+    thetaLightCM=lL.Theta();
+
+    hThetaLab->Fill(thetaLightLab*180.0/TMath::Pi());
+    hThetaCM->Fill(thetaLightCM*180.0/TMath::Pi());
+
+
+
+    // heavy ejectile kinematics in center of mass system
+    TLorentzVector lHeavy;
+    lHeavy.SetVect(-lLight.Vect());
+    lHeavy.SetE(energyCm-lLight.E());
+
+    miss = -lHeavy.M()+massHeavy;
+
+    //printf("miss %f\n", miss);
+    
+
+    // fill histograms
+
+    hMiss->Fill(miss);
+    //hMissTheta->Fill(vLight.Theta()*180.0/TMath::Pi(), miss);
+
+    hdEE->Fill(energyKinLight,detEnergyLoss[firstDetID]);
+    //hEth->Fill(thetaLightLab*180.0/TMath::Pi(), energyKinLight);
+
+
+    energyKinProj/=(Float_t)projA; // MeV/u`
+
+    treeAnalysis2->Fill();
+  
+  }
+
+  cout << nevents << " events processed! " << goodEvents << " events used in analysis! Ratio: " << (Float_t)goodEvents/(Float_t)nevents*100.0 << "%" << endl;
+  cout << detHitMul3 << " events with detector hit multiplicity 3 or larger (angle reconstruction might not be correct for these events)" << endl;
+
+
+
+  fileAnalysis->cd();
+  treeAnalysis2->Write("analysis2");
+
+  hdEE->Write("dEE");
+  hMiss->Write("missingMass");
+  hEth->Write("Eth");
+  hThetaLab->Write("hThetaLab");
+  hThetaCM->Write("hThetaCM");
+
+  printf("Analysis2: Analyzed events writen to file '%s'\n\n", info->fOutFileNameAnalysis);
+
 
 
 } // Analysis2
