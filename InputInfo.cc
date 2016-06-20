@@ -6,6 +6,7 @@ using namespace std;
 InputInfo::InputInfo(){
 	
 	fNumberEvents=100;
+        fNumberOfCutFiles=0;
 
         fProjA=132;
         fProjZ=50;
@@ -116,6 +117,7 @@ void InputInfo::parse(char filename[100]){
 		if(strcmp(temp[0],"output_rootfile_reaction")==0)  {
 			strcpy(fOutFileNameReaction,temp[1]);
 			cout << "Output file of reactions is '" << fOutFileNameReaction << "'" << endl;
+                        cout << "Note that this option is obsolete!" << endl;
 		}
 		else if(strcmp(temp[0],"output_textfile_fresco")==0)  {
 			strcpy(fOutFileNameFresco,temp[1]);
@@ -146,6 +148,17 @@ void InputInfo::parse(char filename[100]){
 			strcpy(fOedoSimFileName,temp[1]);
                         fHaveOedoSimFileName = true;
 			cout << "Root file name with OEDO beam profile is set to " << fOedoSimFileName << endl;
+		}
+		else if(strcmp(temp[0],"dE-E_cut_file_type_name")==0){
+                        Int_t cutType = atoi(temp[1]);
+                        if(cutType >= maxCutFiles){
+                          cout << "Invalid cut type " << cutType << endl;
+                          cout << "Available types at the moment: 0 = elastic scattering, 1 = (d,p) transfer reaction" << endl;
+                          abort();
+                        }
+			strcpy(fFileNameCuts[cutType],temp[2]);
+                        //fNumberOfCutFiles++;
+			cout << "Root file with with graphical cuts for dE-E is set to type " << cutType << ", file name "  << fFileNameCuts[cutType] << endl;
 		}
                 // general parameter for all programs
 		else if(strcmp(temp[0],"number_events")==0){
@@ -186,9 +199,11 @@ void InputInfo::parse(char filename[100]){
                         }
                         cout << endl;
                 }
-                //else if(strcmp(temp[0],"number_of_states")==0){
-                //        fNumberOfStates=atof(temp[1]);
-                //        cout << "Number of states in heavy ejectile is set to " << fNumberOfStates << endl;
+                //else if(strcmp(temp[0],"beam_energy_range")==0){
+                //        fBeamEnergyRange[0]=atof(temp[1]);
+                //        fBeamEnergyRange[1]=atof(temp[2]);
+                //        fBeamEnergyRange[2]=atof(temp[3]);
+                //        cout << " " <<  << endl;
                 //}
                 //else if(strcmp(temp[0],"max_excitation_energy")==0){
                 //        fMaxExEnergy=atof(temp[1]);

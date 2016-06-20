@@ -4,6 +4,7 @@
 #include "LibPerso.h"
 
 #define maxNumberOfStates 10
+#define maxCutFiles 2
 
 class InputInfo
 {
@@ -20,6 +21,9 @@ class InputInfo
         char fOutFileNameAnalysis[500];
         char fOedoSimFileName[500];
         
+        char fFileNameCuts[maxCutFiles][500];
+        Int_t fNumberOfCutFiles;
+
         // general, for all programs
         Int_t fNumberEvents;
 
@@ -71,6 +75,7 @@ class InputInfo
         Bool_t fProfileE, fProfileX, fProfileY, fProfileA, fProfileB;
         Bool_t fNoBeamTracking;
         Bool_t fIncludeElastic; 
+
         	
 	
 };

@@ -367,6 +367,37 @@ void Analysis::Analysis1(){
 } // Analysis1
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 void Analysis::Analysis2(){
  
   TRandom3* randomizer = new TRandom3();
@@ -395,11 +426,6 @@ void Analysis::Analysis2(){
 
   treeHeader->GetEntry(0);
   printf("Obtained masses: projectile %f, target %f, light ejectile %f, heavy ejectile %f; Q-value %f\n", massProj, massTarget, massLight, massHeavy, qValue);
-
-
-
-
-
 
 
 
@@ -603,4 +629,9 @@ void Analysis::Analysis2(){
 
 
 } // Analysis2
+
+
+Bool_t Analysis::GetCuts(){
+  return false;
+}
 

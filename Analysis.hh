@@ -6,7 +6,8 @@
 #include "InputInfo.hh"
 #include "DetectorInfo.hh"
 
-#define maxCuts 10
+// maxCutFiles defined in InputInfo.hh
+#define maxCuts 10 // per cut file 
 
 class Analysis
 {
