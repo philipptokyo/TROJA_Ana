@@ -312,7 +312,7 @@ void Analysis::ProcessDetectorHits(){  // private
 void Analysis::Analysis1(){
   
   // define histograms
-  TH2F* hdEE=new TH2F("hdEE", "delta E vs. E proton", 1000,0,20,100,0,8);
+  TH2F* hdEE=new TH2F("hdEE_analysis1", "delta E vs. E, Analysis1 ", 1000,0,50,100,0,8);
 
 
   Int_t goodEvents=0;
@@ -358,7 +358,7 @@ void Analysis::Analysis1(){
   fileAnalysis->cd();
   treeAnalysis1->Write("analysis1");
 
-//  hdEE->Write("dEE");
+  hdEE->Write("dEE1");
 
   printf("Analysis1: Analyzed events writen to file '%s'\n\n", info->fOutFileNameAnalysis);
 
@@ -414,7 +414,7 @@ void Analysis::Analysis2(){
   TH1F* hMiss=new TH1F("hMiss", "Missing Mass", 600, -5.0, 1.0);
   //TH2F* hMissTheta=new TH2F("hMissTheta", "Missing mass vs. theta proton", 360,0,180,1000,-20,20);
 
-  TH2F* hdEE=new TH2F("hdEE", "delta E vs. E proton", 1000,0,20,100,0,8);
+  TH2F* hdEE=new TH2F("hdEE_analysis2", "delta E vs. E, Analysis2", 1000,0,50,100,0,8);
   TH2F* hEth=new TH2F("hEth", "E proton vs. theta lab", 1800,0,180,500,0,50);
 
   TH1F* hThetaLab = new TH1F("hThetaLab","Theta Lab",1800,0,180);
@@ -592,7 +592,7 @@ void Analysis::Analysis2(){
   fileAnalysis->cd();
   treeAnalysis2->Write("analysis2");
 
-  hdEE->Write("dEE");
+  hdEE->Write("dEE2");
   hMiss->Write("missingMass");
   hEth->Write("Eth");
   hThetaLab->Write("hThetaLab");
