@@ -19,7 +19,7 @@ class Analysis
     void Analysis1();
     Bool_t GetCuts();
     void Analysis2();
-
+    void MissingMass(Int_t channel);
 
     Analysis(InputInfo *i, DetectorInfo* d);
     
@@ -41,7 +41,7 @@ class Analysis
     TTree* tree;
     TTree* treeBeam;
     TTree* treeAnalysis1;
-    TTree* treeAnalysis2;
+    TTree* treeAnalysis2[maxCutFiles];
     
     Int_t projA, projZ, targA, targZ;
     Float_t massProj, massTarget, massLight, massHeavy, qValue;
@@ -73,6 +73,9 @@ class Analysis
     // define output of analysis
     Int_t detHitMul; // detector hit multiplicity
     Int_t detHitMul3; // aux, count events with more than 2 detectors fired
+
+    Int_t type; // reaction type; 0 = elastic scattering, 1 = (d,p) 
+
     Double_t gammaProj, gammaLight;
     Double_t energyTotProj, energyTotLight;
     //  Double_t energyKinHeavy=0.0, energyTotHeavy=0.0, gammaHeavy=0.0, momentumHeavy=0.0;
