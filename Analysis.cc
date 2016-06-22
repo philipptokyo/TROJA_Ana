@@ -4,8 +4,15 @@
 
 
 Analysis::Analysis(InputInfo *i, DetectorInfo* d){
+  
   info = i;
   detInfo = d;
+  
+  for(Int_t f=0; f<maxCutFiles; f++){
+  for(Int_t i=0; i<maxCuts; i++){
+    cutExists[f][i]=false; // -1: doesn't exist, >-1: type of cut/reaction (0 = elastic, 1 = (d,p), ...)
+  }
+  }
 
   Bool_t success = Init();
   if(success){
@@ -91,14 +98,12 @@ Bool_t Analysis::Init(){
    return false;
   }
 
-
-  projA=info->fProjA;
-  projZ=info->fProjZ;
-  targA=info->fTargetA;
-  targZ=info->fTargetZ;
-
+  projA = info->fProjA;
+  projZ = info->fProjZ;
+  targA = info->fTargetA;
+  targZ = info->fTargetZ;
   
-  treeBeam=(TTree*)fileBeam->Get("events");
+  treeBeam = (TTree*)fileBeam->Get("events");
   //TTree* tree=(TTree*)infile->Get("events"); //simulation input
   if(!treeBeam){
     cout << "TTree 'events' not found in makeEvents root file!" << endl;
@@ -115,15 +120,13 @@ Bool_t Analysis::Init(){
    return false;
   }
 
-  tree=(TTree*)infile->Get("troja");
+  tree = (TTree*)infile->Get("troja");
   //TTree* tree=(TTree*)infile->Get("events"); //simulation input
   if(!tree){
     cout << "TTree 'troja' not found in geant root file!" << endl;
     //cout << "TTree 'events' not found!" << endl;
     return false;
   }
-
-
 
   // tree with generated events / projectile information
 
@@ -137,9 +140,6 @@ Bool_t Analysis::Init(){
   treeBeam->SetBranchAddress("beamTheta", &beamTheta);
   treeBeam->SetBranchAddress("beamPhi", &beamPhi);
   treeBeam->SetBranchAddress("excitationEnergy", &genExcEn);
-  
-
-
 
   tree->SetBranchAddress("eventNumber", &eventNumber);
   tree->SetBranchAddress("detHit", detHit);
@@ -156,7 +156,6 @@ Bool_t Analysis::Init(){
   fileAnalysis = new TFile(info->fOutFileNameAnalysis, "recreate");
 
   char tmpName[50];
-
 
   // define tree
   treeAnalysis1 = new TTree();
@@ -176,8 +175,6 @@ Bool_t Analysis::Init(){
   treeAnalysis1->Branch("simFIz", &FIz, "simFIz/D");
   treeAnalysis1->Branch("simFIdetID", &FIdetID, "simFIdetID/I");
   treeAnalysis1->Branch("anaFIdetID", &firstDetID, "anaFIdetID/I");
-
-
 
 
   treeAnalysis2 = new TTree();
@@ -215,8 +212,6 @@ Bool_t Analysis::Init(){
   treeAnalysis2->Branch("simFIz", &FIz, "simFIz/D");
   treeAnalysis2->Branch("simFIdetID", &FIdetID, "simFIdetID/I");
   treeAnalysis2->Branch("anaFIdetID", &firstDetID, "anaFIdetID/I");
-
-
 
   treeAnalysis2->Branch("simLightThetaLab", &thetaLightLab, "simLightThetaLab/D");
   treeAnalysis2->Branch("simLightThetaCM", &thetaLightCM, "simLightThetaCM/D");
@@ -256,8 +251,6 @@ Bool_t Analysis::Init(){
     }
   }
 
-
-  
   return true;
 
 } // Init
@@ -632,6 +625,54 @@ void Analysis::Analysis2(){
 
 
 Bool_t Analysis::GetCuts(){
-  return false;
+  
+  Int_t filesFound=0;
+  TFile* file[maxCutFiles];
+  Bool_t haveACut = false;
+
+  for(Int_t f=0; f<maxCutFiles; f++){
+    
+    if(strcmp(info->fFileNameCuts[f],"")==0){
+      continue;
+    }else{
+      cout << "Opening file '" << info->fFileNameCuts[f] << "'" << endl;
+      file[f] = TFile::Open(info->fFileNameCuts[f],"read");
+      if(!file[f]){
+        cout << "Cuts file not found: " << info->fFileNameCuts[f] << endl;
+        return false;
+      }
+    }
+
+    filesFound++;
+
+    TIter next(file[f]->GetListOfKeys());
+    TKey *key;
+    Int_t nkeys = file[f]->GetListOfKeys()->GetSize();
+    printf("Found %d keys\n", nkeys);
+    //while ((key = (TKey*)next())) {
+    for(Int_t i=0; i<nkeys; i++){
+      key = (TKey*)next();
+      TClass *cl = gROOT->GetClass(key->GetClassName());
+      if (!cl->InheritsFrom("TCutG")) {continue;}
+      cut[f][i] = (TCutG*)key->ReadObj();
+
+      cut[f][i]->SetTitle(Form("dE-E cut, type %d, number %d", f, i));
+      cutExists[f][i] = true;
+      if(!haveACut){haveACut = true;}
+
+      fileAnalysis->cd();
+      cut[f][i]->Write(Form("cut_%d_%d", f, i));
+
+    } // loop over keys
+  } // loop over files
+
+
+
+  return haveACut;
+
+
 }
+
+
+
 

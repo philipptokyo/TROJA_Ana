@@ -81,8 +81,9 @@ class Analysis
     Double_t simDetectorHitPos[3]; // x, y, z; position used for analysis
     Double_t thetaLightLab, thetaLightCM, phiLight;
     Double_t miss;
-
-    TCutG* cut[maxCuts];
+    
+    Bool_t cutExists[maxCutFiles][maxCuts];
+    TCutG* cut[maxCutFiles][maxCuts];
 
 };
 

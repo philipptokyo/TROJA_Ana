@@ -90,7 +90,6 @@ Int_t main(Int_t argc, char **argv){
   
 
  
-  ana->Analysis1();
   
   Bool_t haveCuts = ana->GetCuts();
   
@@ -98,6 +97,10 @@ Int_t main(Int_t argc, char **argv){
     cout << "Found dE-E cuts! Proceeding with analysis2 (missing mass)" << endl;
     ana->Analysis2();
   }else{
+    
+    cout << "No dE-E cuts found! Proceeding with analysis1 (dE-E)" << endl;
+    ana->Analysis1();
+
     cout << "\033[1;34mGraphical cuts on dE-E plot not yet set! Please create the cuts from the dE-E output of Analysis1!\033[0m" << endl;
     //cout << "\033[1;31mbold red text\033[0m\n" << endl;
     cout << endl;
