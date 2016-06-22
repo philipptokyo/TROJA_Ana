@@ -6,6 +6,9 @@
 #include "InputInfo.hh"
 #include "DetectorInfo.hh"
 
+#include "Nucleus.hh"
+#include "Kinematics.hh"
+
 // maxCutFiles defined in InputInfo.hh
 #define maxCuts 10 // per cut file 
 
@@ -16,6 +19,7 @@ class Analysis
     
     Bool_t Init();
     void ResetVariables();
+    void CreateHeader();
     void Analysis1();
     Bool_t GetCuts();
     void Analysis2();
@@ -37,19 +41,25 @@ class Analysis
     TFile* infile;
     TFile* fileAnalysis;
 
-    //TTree* treeHeader;
     TTree* tree;
     TTree* treeBeam;
+    TTree* treeAnaHeader[maxCutFiles];
     TTree* treeAnalysis1;
     TTree* treeAnalysis2[maxCutFiles];
     
     Int_t projA, projZ, targA, targZ;
+    Int_t recoA, recoZ, ejecA, ejecZ;
     Float_t massProj, massTarget, massLight, massHeavy, qValue;
+
+    Nucleus* nucProj;
+    Nucleus* nucTarg;
+    Nucleus* nucEjec[maxCutFiles];
+    Nucleus* nucReco[maxCutFiles];
 
     Float_t energyKinProj;  
     Float_t beamX, beamY, beamZ;
     Float_t beamTheta, beamPhi;
-    Double_t genLightEnergy, genLightTheta, genLightPhi;
+    Double_t genLightEnergy, genLightTheta, genLightThetaCM, genLightPhi;
     Float_t genExcEn;
 
 
@@ -87,6 +97,18 @@ class Analysis
     
     Bool_t cutExists[maxCutFiles][maxCuts];
     TCutG* cut[maxCutFiles][maxCuts];
+
+    TRandom3* randomizer; 
+
+    // define histograms
+    TH1F* hMiss;
+    //TH2F* hMissTheta;
+  
+    TH2F* hdEE;
+    TH2F* hEth;
+  
+    TH1F* hThetaLab;
+    TH1F* hThetaCM;
 
 };
 

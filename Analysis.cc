@@ -1,6 +1,8 @@
 #include "Analysis.hh"
 
-#define warningType maxCutFiles+2
+#include "Nucleus.hh"
+
+#define warningType maxCutFiles+1
 
 
 Analysis::Analysis(InputInfo *i, DetectorInfo* d){
@@ -17,6 +19,7 @@ Analysis::Analysis(InputInfo *i, DetectorInfo* d){
   Bool_t success = Init();
   if(success){
     cout << "Analysis: initalization successfull! " << endl;
+    CreateHeader();
   }else{
     cout << "Analysis: Error during initialization! aborting..." << endl;
     abort();
@@ -44,6 +47,7 @@ void Analysis::ResetVariables(){
   beamPhi = 0.0;
   genLightEnergy = 0.0;
   genLightTheta = 0.0;
+  genLightThetaCM = 0.0;
   genLightPhi = 0.0;
   genExcEn = 0.0;
 
@@ -90,9 +94,28 @@ void Analysis::ResetVariables(){
 
 }
 
+
+
 Bool_t Analysis::Init(){
 
   ResetVariables();
+
+
+  randomizer = new TRandom3();
+  randomizer->SetSeed(0);
+
+  // define histograms
+  //hMiss=new TH1F("hMiss", "Missing Mass", 1000, -20.0, 20.0);
+  //hMiss=new TH1F("hMiss", "Missing Mass", 2000, -10.0, 10.0);
+  //hMiss=new TH1F("hMiss", "Missing Mass", 2000, -6.0, 1.0);
+  hMiss=new TH1F("hMiss", "Missing Mass", 600, -5.0, 1.0);
+  //hMissTheta=new TH2F("hMissTheta", "Missing mass vs. theta proton", 360,0,180,1000,-20,20);
+
+  hdEE=new TH2F("hdEE_analysis2", "delta E vs. E, Analysis2", 1000,0,50,100,0,8);
+  hEth=new TH2F("hEth", "E proton vs. theta lab", 1800,0,180,500,0,50);
+
+  hThetaLab = new TH1F("hThetaLab","Theta Lab",1800,0,180);
+  hThetaCM = new TH1F("hThetaCM","Theta CM",1800,0,180);
    
   fileBeam = TFile::Open(info->fOutFileNameMakeEvents,"read");
 
@@ -135,6 +158,7 @@ Bool_t Analysis::Init(){
 
   treeBeam->SetBranchAddress("lightEnergy", &genLightEnergy);
   treeBeam->SetBranchAddress("lightTheta", &genLightTheta);
+  treeBeam->SetBranchAddress("lightThetaCM", &genLightThetaCM);
   treeBeam->SetBranchAddress("lightPhi", &genLightPhi);
   treeBeam->SetBranchAddress("beamEnergy", &energyKinProj); // is in MeV/u
   treeBeam->SetBranchAddress("beamX", &beamX);
@@ -183,13 +207,14 @@ Bool_t Analysis::Init(){
 
   for(Int_t f=0; f<maxCutFiles; f++){
     
-    treeAnalysis2[f] = new TTree();
+    treeAnalysis2[f] = new TTree(Form("analysis2_%d", f), Form("Analysis2 (missing mass) tree, reaction channel %d", f));
 
     treeAnalysis2[f]->Branch("eventNumber", &eventNumber, "eventNumber/I");
     // write generated data to tree
     // these values are with resolutions!!!!!!!!!!!!!
     treeAnalysis2[f]->Branch("genLightEnergy", &genLightEnergy, "genLightEnergy/D");
-    treeAnalysis2[f]->Branch("genLightTheta", &genLightTheta, "genLightTheta/D");
+    treeAnalysis2[f]->Branch("genLightThetaLab", &genLightTheta, "genLightThetaLab/D");
+    treeAnalysis2[f]->Branch("genLightThetaCM", &genLightThetaCM, "genLightThetaCM/D");
     treeAnalysis2[f]->Branch("genLightPhi", &genLightPhi, "genLightPhi/D");
     treeAnalysis2[f]->Branch("genBeamX", &beamX, "genBeamX/F");
     treeAnalysis2[f]->Branch("genBeamY", &beamY, "genBeamY/F");
@@ -220,7 +245,7 @@ Bool_t Analysis::Init(){
     treeAnalysis2[f]->Branch("anaFIdetID", &firstDetID, "anaFIdetID/I");
 
     treeAnalysis2[f]->Branch("simLightThetaLab", &thetaLightLab, "simLightThetaLab/D");
-    treeAnalysis2[f]->Branch("simLightThetaCM", &thetaLightCM, "simLightThetaCM/D");
+//    treeAnalysis2[f]->Branch("simLightThetaCM", &thetaLightCM, "simLightThetaCM/D");                           // !!!!!!!!!!!!!!!!!!!!!!!!!!!!! needs bug fixing !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     treeAnalysis2[f]->Branch("simLightPhi", &phiLight, "simLightPhi/D");
 
 
@@ -265,6 +290,84 @@ Bool_t Analysis::Init(){
 
 } // Init
 
+
+
+
+
+void Analysis::CreateHeader(){
+  
+  cout << "Creating header with following information about the nuclei:" << endl;
+
+  fileAnalysis->cd(); 
+  
+  
+  projA = info->fProjA;
+  projZ = info->fProjZ;
+  targA = info->fTargetA;
+  targZ = info->fTargetZ;
+ 
+  
+  char* massFile = (char*)"/home/philipp/programme/makeEvents/mass.dat";
+  
+  nucProj = new Nucleus(projZ, projA-projZ, massFile);
+  nucTarg = new Nucleus(targZ, targA-targZ, massFile);
+  
+  massProj = nucProj->GetMass();
+  massTarget = nucTarg->GetMass(); 
+  
+  for(Int_t f=0; f<maxCutFiles; f++){
+    switch(f) {
+      case 0: { // elastic scattering
+        recoA = targA;
+        recoZ = targZ;
+        ejecA = projA;
+        ejecZ = projZ;
+        break;
+      }
+      case 1: { // (d,p) one neutron transfer
+        recoA = targA-1;
+        recoZ = targZ;
+        ejecA = projA+1;
+        ejecZ = projZ;
+        break;
+      }
+    }
+    
+    nucReco[f] = new Nucleus(recoZ, recoA-recoZ, massFile);
+    nucEjec[f] = new Nucleus(ejecZ, ejecA-ejecZ, massFile);
+
+    massLight = nucReco[f]->GetMass();
+    massHeavy = nucEjec[f]->GetMass();
+
+    //qValue = nucProj->GetMass() + nucTarg->GetMass() - nucReco[f]->GetMass() - nucEjec[f]->GetMass() ;
+    qValue = massProj + massTarget - massLight - massHeavy; 
+    
+    treeAnaHeader[f] = new TTree(Form("treeAnaHeader_channel%d", f), Form("Header, channel %d", f));
+
+    treeAnaHeader[f]->Branch("projA", &projA, "projA/I");
+    treeAnaHeader[f]->Branch("projZ", &projZ, "projZ/I");
+    treeAnaHeader[f]->Branch("projMass", &massProj, "projMass/F");
+    treeAnaHeader[f]->Branch("targA", &targA, "targA/I");
+    treeAnaHeader[f]->Branch("targZ", &targZ, "targZ/I");
+    treeAnaHeader[f]->Branch("targetMass", &massTarget, "targetMass/F");
+    treeAnaHeader[f]->Branch("recoA", &recoA, "recoA/I");
+    treeAnaHeader[f]->Branch("recoZ", &recoZ, "recoZ/I");
+    treeAnaHeader[f]->Branch("recoMass", &massLight, "recoMass/F");
+    treeAnaHeader[f]->Branch("ejecA", &ejecA, "ejecA/I");
+    treeAnaHeader[f]->Branch("ejecZ", &ejecZ, "ejecZ/I");
+    treeAnaHeader[f]->Branch("ejecMass", &massHeavy, "ejecMass/F");
+    treeAnaHeader[f]->Branch("qValue", &qValue, "qValue/F");
+
+    treeAnaHeader[f]->Fill();
+    treeAnaHeader[f]->Write(Form("anaHeader%d", f));
+    
+    printf("Wrote for reaction channel %d: projectile A/Z %d/%d, target A/Z %d/%d, recoiled A/Z %d/%d, ejectile A/Z %d/%d\n", f, projA,projZ, targA,targZ, recoA,recoZ, ejecA,ejecZ);
+    printf("Wrote for reaction channel %d: mass projectile %f, mass target %f, mass recoiled %f, mass ejectile %f, q-value %f\n", f, massProj, massTarget, massLight, massHeavy, qValue);
+
+
+  }
+
+}
 
 
 
@@ -321,7 +424,12 @@ void Analysis::Analysis1(){
   Int_t goodEvents=0;
   Int_t nevents=tree->GetEntries();
 
+  cout << "Analysis1: start event loop (" << nevents << " events)" << endl; 
   for(Int_t e=0; e<nevents; e++){
+    
+    if(e%100000==0){
+      cout << "Processing event " << e << endl;
+    }
 
     ResetVariables();
 
@@ -385,22 +493,6 @@ void Analysis::Analysis1(){
 
 void Analysis::Analysis2(){
  
-  TRandom3* randomizer = new TRandom3();
-  randomizer->SetSeed(0);
-
-
-  // define histograms
-  //TH1F* hMiss=new TH1F("hMiss", "Missing Mass", 1000, -20.0, 20.0);
-  //TH1F* hMiss=new TH1F("hMiss", "Missing Mass", 2000, -10.0, 10.0);
-  //TH1F* hMiss=new TH1F("hMiss", "Missing Mass", 2000, -6.0, 1.0);
-  TH1F* hMiss=new TH1F("hMiss", "Missing Mass", 600, -5.0, 1.0);
-  //TH2F* hMissTheta=new TH2F("hMissTheta", "Missing mass vs. theta proton", 360,0,180,1000,-20,20);
-
-  TH2F* hdEE=new TH2F("hdEE_analysis2", "delta E vs. E, Analysis2", 1000,0,50,100,0,8);
-  TH2F* hEth=new TH2F("hEth", "E proton vs. theta lab", 1800,0,180,500,0,50);
-
-  TH1F* hThetaLab = new TH1F("hThetaLab","Theta Lab",1800,0,180);
-  TH1F* hThetaCM = new TH1F("hThetaCM","Theta CM",1800,0,180);
 
   Bool_t doAnalysisType[maxCutFiles] = {false};
   //for(Int_t f=0; f<maxCutFiles; f++){
@@ -413,14 +505,18 @@ void Analysis::Analysis2(){
   // reset the aux vaiable 
   detHitMul3=0;
   
+  cout << "Analysis2: start event loop (" << nevents << " events)" << endl; 
   for(Int_t e=0; e<nevents; e++){
     
+    if(e%100000==0){
+      cout << "Processing event " << e << endl;
+    }
+     
     ResetVariables();
     for(Int_t f=0; f<maxCutFiles; f++){
       doAnalysisType[f] = false;
     }
 
-    treeHeader->GetEntry(0); // todo: take these values from Kinematics/Nucleus/mass file
 
     tree->GetEvent(e);
     treeBeam->GetEvent(e); // todo: make tree friend instead
@@ -480,7 +576,7 @@ void Analysis::Analysis2(){
 
   fileAnalysis->cd();
   for(Int_t f=0; f<maxCutFiles; f++){
-    treeAnalysis2[f]->Write(Form("analysis2_channel%d", f));
+    treeAnalysis2[f]->Write(Form("analysis2_%d", f));
   }
 
   hdEE->Write("dEE2");
@@ -503,158 +599,162 @@ void Analysis::Analysis2(){
 
 void Analysis::MissingMass(Int_t channel){  
 
-  TTree* treeHeader=(TTree*)fileBeam->Get("header");
-  if(!treeHeader){
-    cout << "TTree 'header' not found in makeEvents root file!" << endl;
-    //return 0;
-  }
+//  TTree* treeHeader=(TTree*)fileBeam->Get("header");
+//  if(!treeHeader){
+//    cout << "TTree 'header' not found in makeEvents root file!" << endl;
+//    //return 0;
+//  }
+//
+//
+//  Int_t projA=132;
+//  //Float_t projMass=0.0, targetMass=0.0, lightMass=0.0, heavyMass=0.0, qValue=0.0;
+//  Float_t massProj=0.0, massTarget=0.0, massLight=0.0, massHeavy=0.0, qValue=0.0;
+//
+//  treeHeader->SetBranchAddress("projA", &projA);
+//  treeHeader->SetBranchAddress("projMass", &massProj);
+//  treeHeader->SetBranchAddress("targetMass", &massTarget);
+//  treeHeader->SetBranchAddress("lightMass", &massLight);
+//  treeHeader->SetBranchAddress("heavyMass", &massHeavy);
+//  treeHeader->SetBranchAddress("qValue", &qValue);
+//
+//  treeHeader->GetEntry(0); // todo: take these values from Kinematics/Nucleus/mass file
+//  //printf("Obtained masses: projectile %f, target %f, light ejectile %f, heavy ejectile %f; Q-value %f\n", massProj, massTarget, massLight, massHeavy, qValue);
+
+  
+  // load masses from header
+  treeAnaHeader[channel]->GetEvent(0);
 
 
-  Int_t projA=132;
-  //Float_t projMass=0.0, targetMass=0.0, lightMass=0.0, heavyMass=0.0, qValue=0.0;
-  Float_t massProj=0.0, massTarget=0.0, massLight=0.0, massHeavy=0.0, qValue=0.0;
+    // aux:
+    //Double_t x = FIx;
+    //Double_t y = FIy;
+    //Double_t z = FIz;
 
-  treeHeader->SetBranchAddress("projA", &projA);
-  treeHeader->SetBranchAddress("projMass", &massProj);
-  treeHeader->SetBranchAddress("targetMass", &massTarget);
-  treeHeader->SetBranchAddress("lightMass", &massLight);
-  treeHeader->SetBranchAddress("heavyMass", &massHeavy);
-  treeHeader->SetBranchAddress("qValue", &qValue);
+    // take only events in backward direction
+    // in very forward direction are usually punch-troughs of protons through the detector
+  //    if(theta<90.0){
+  //    if(theta==0.0){
+  //      continue;
+  //    }
+      
+  //    theta/=180.0/TMath::Pi(); // is actually not used anymore
+    
+    // smear out data with detector position resolutions
+    if(info->NoBeamTracking()){
+      beamX=0.0;
+      beamY=0.0;
+      beamZ=0.0;
+    }else{
+      beamX=randomizer->Gaus(beamX, info->fResTargetX); // in mm
+      beamY=randomizer->Gaus(beamY, info->fResTargetY);
+      beamZ=randomizer->Gaus(beamZ, info->fResTargetZ);
+    }
+    
 
-  treeHeader->GetEntry(0);
-  printf("Obtained masses: projectile %f, target %f, light ejectile %f, heavy ejectile %f; Q-value %f\n", massProj, massTarget, massLight, massHeavy, qValue);
+
+    // projectile kinematics
+
+    energyKinProj*=(Float_t)projA; 
+    // Projectile data
+    // at the moment from simulation input
+    // todo: separate simulation including incoming tracking
+
+    if(!info->NoBeamTracking()){
+      energyKinProj = randomizer->Gaus(energyKinProj, info->fResBeamE);
+    }
+      
+    gammaProj = (energyKinProj)/massProj + 1.0;
+    //Float_t betaProj = TMath::Sqrt(1.0-(1.0/(gammaProj*gammaProj))); //just for cross checking
+    momentumProj = massProj*TMath::Sqrt(gammaProj*gammaProj-1.0); 
+    energyTotProj = massProj*gammaProj; //total energy
+    
+     
+    TVector3 vProj(0.0, 0.0, 1.0); 
+    if(!info->NoBeamTracking()){
+      vProj.SetMagThetaPhi(1.0, beamTheta, beamPhi);                                         // comment out this line to see the effect of no beam profile correction
+    
+      // rotate by beam angular resolution
+      vProj.RotateY(randomizer->Gaus(0.0, (info->fResTargetA)/1000.0)); // resolutions in mrad
+      vProj.RotateX(randomizer->Gaus(0.0, (info->fResTargetB)/1000.0));
+    }
+    vProj.SetMag(momentumProj);
+
+    // center of mass kinematic values
+    Float_t energyCm = TMath::Sqrt(massProj*massProj + massTarget*massTarget + 2.0*energyTotProj*massTarget);
+    Float_t betaCm = momentumProj/(energyTotProj+massTarget);
+    TVector3 vCm(vProj); // direction of projectile including beam profile
+    vCm.SetMag(betaCm);
 
 
 
 
-//    // aux:
-//    //Double_t x = FIx;
-//    //Double_t y = FIy;
-//    //Double_t z = FIz;
-//
-//    // take only events in backward direction
-//    // in very forward direction are usually punch-troughs of protons through the detector
-//  //    if(theta<90.0){
-//  //    if(theta==0.0){
-//  //      continue;
-//  //    }
-//      
-//  //    theta/=180.0/TMath::Pi(); // is actually not used anymore
-//    
-//    // smear out data with detector position resolutions
-//    if(info->NoBeamTracking()){
-//      beamX=0.0;
-//      beamY=0.0;
-//      beamZ=0.0;
-//    }else{
-//      beamX=randomizer->Gaus(beamX, info->fResTargetX); // in mm
-//      beamY=randomizer->Gaus(beamY, info->fResTargetY);
-//      beamZ=randomizer->Gaus(beamZ, info->fResTargetZ);
-//    }
-//    
-//
-//
-//    // projectile kinematics
-//
-//    energyKinProj*=(Float_t)projA; 
-//    // Projectile data
-//    // at the moment from simulation input
-//    // todo: separate simulation including incoming tracking
-//
-//    if(!info->NoBeamTracking()){
-//      energyKinProj = randomizer->Gaus(energyKinProj, info->fResBeamE);
-//    }
-//      
-//    gammaProj = (energyKinProj)/massProj + 1.0;
-//    //Float_t betaProj = TMath::Sqrt(1.0-(1.0/(gammaProj*gammaProj))); //just for cross checking
-//    momentumProj = massProj*TMath::Sqrt(gammaProj*gammaProj-1.0); 
-//    energyTotProj = massProj*gammaProj; //total energy
-//    
-//     
-//    TVector3 vProj(0.0, 0.0, 1.0); 
-//    if(!info->NoBeamTracking()){
-//      vProj.SetMagThetaPhi(1.0, beamTheta, beamPhi);                                         // comment out this line to see the effect of no beam profile correction
-//    
-//      // rotate by beam angular resolution
-//      vProj.RotateY(randomizer->Gaus(0.0, (info->fResTargetA)/1000.0)); // resolutions in mrad
-//      vProj.RotateX(randomizer->Gaus(0.0, (info->fResTargetB)/1000.0));
-//    }
-//    vProj.SetMag(momentumProj);
-//
-//    // center of mass kinematic values
-//    Float_t energyCm = TMath::Sqrt(massProj*massProj + massTarget*massTarget + 2.0*energyTotProj*massTarget);
-//    Float_t betaCm = momentumProj/(energyTotProj+massTarget);
-//    TVector3 vCm(vProj); // direction of projectile including beam profile
-//    vCm.SetMag(betaCm);
-//
-//
-//
-//
-//    // light ejectile kinematics
-//
-//    // get total energy and momentum of the light ejectile
-//    
-//    //energySum=energyLoss+energyTotal;
-//    //gammaLight = energySum/massLight+1.0;   
-//    gammaLight = energyKinLight/massLight+1.0;      // simulated
-//    //gammaLight = genLightEnergy/massLight+1.0; // generated
-//    //theta=genLightTheta; // generated theta
-//   
-//   
-//    energyTotLight = gammaLight*massLight;
-//    //energyTotLight = energyKinLight+massLight;
-//    momentumLight = massLight*TMath::Sqrt(gammaLight*gammaLight-1.0);
-//
-//    //printf("lightTheta %f, lightEnergy %f \n", theta, energySum);
-//    //printf("x %f, y %f, z %f, beamX %f, beamY %f, beamZ %f\n",x ,y, z, beamX, beamY, beamZ);
-//    //TVector3 vLight(x-beamX, y-beamY, z-beamZ); //momentum direction of proton
-//    TVector3 vLight(simDetectorHitPos[0]-beamX, simDetectorHitPos[1]-beamY, simDetectorHitPos[2]-beamZ); //momentum direction of proton
-//    //printf("vLight.Mag %f\n", vLight.Mag());
-//    vLight.SetMag(momentumLight);
-//    //vLight.SetMagThetaPhi(momentumLight, theta, phi); // without beam position spread
-//    
-//    // for the root tree
-//    thetaLightLab = vLight.Theta(); 
-//    phiLight = vLight.Phi(); 
-//
-//    TLorentzVector lLight;
-//    lLight.SetVect(vLight);
-//    lLight.SetE(energyTotLight);
-//
-//    TLorentzVector lL=lLight;
-//
-//    lLight.Boost(-vCm);
-//
-//    //thetaLightCM=lLight.Theta();
-//
-//    lL.Boost(vCm);
-//    thetaLightCM=lL.Theta();
-//
-//    hThetaLab->Fill(thetaLightLab*180.0/TMath::Pi());
-//    hThetaCM->Fill(thetaLightCM*180.0/TMath::Pi());
-//
-//
-//
-//    // heavy ejectile kinematics in center of mass system
-//    TLorentzVector lHeavy;
-//    lHeavy.SetVect(-lLight.Vect());
-//    lHeavy.SetE(energyCm-lLight.E());
-//
-//    miss = -lHeavy.M()+massHeavy;
-//
-//    //printf("miss %f\n", miss);
-//    
-//
-//    // fill histograms
-//
-//    hMiss->Fill(miss);
-//    //hMissTheta->Fill(vLight.Theta()*180.0/TMath::Pi(), miss);
-//
-//    hdEE->Fill(energyKinLight,detEnergyLoss[firstDetID]);
-//    //hEth->Fill(thetaLightLab*180.0/TMath::Pi(), energyKinLight);
-//
-//
-//    energyKinProj/=(Float_t)projA; // MeV/u`
+    // light ejectile kinematics
+
+    // get total energy and momentum of the light ejectile
+    
+    //energySum=energyLoss+energyTotal;
+    //gammaLight = energySum/massLight+1.0;   
+    gammaLight = energyKinLight/massLight+1.0;      // simulated
+    //gammaLight = genLightEnergy/massLight+1.0; // generated
+    //theta=genLightTheta; // generated theta
+   
+   
+    energyTotLight = gammaLight*massLight;
+    //energyTotLight = energyKinLight+massLight;
+    momentumLight = massLight*TMath::Sqrt(gammaLight*gammaLight-1.0);
+
+    //printf("lightTheta %f, lightEnergy %f \n", theta, energySum);
+    //printf("x %f, y %f, z %f, beamX %f, beamY %f, beamZ %f\n",x ,y, z, beamX, beamY, beamZ);
+    //TVector3 vLight(x-beamX, y-beamY, z-beamZ); //momentum direction of proton
+    TVector3 vLight(simDetectorHitPos[0]-beamX, simDetectorHitPos[1]-beamY, simDetectorHitPos[2]-beamZ); //momentum direction of proton
+    //printf("vLight.Mag %f\n", vLight.Mag());
+    vLight.SetMag(momentumLight);
+    //vLight.SetMagThetaPhi(momentumLight, theta, phi); // without beam position spread
+
+
+    // for the root tree
+    thetaLightLab = vLight.Theta(); 
+    phiLight = vLight.Phi(); 
+
+    TLorentzVector lLight;
+    lLight.SetVect(vLight);
+    lLight.SetE(energyTotLight);
+
+    TLorentzVector lL=lLight;
+
+    lLight.Boost(-vCm);
+    //thetaLightCM=lLight.Theta();
+
+
+    lL.Boost(vCm);
+    thetaLightCM=lL.Theta();
+
+
+    hThetaLab->Fill(thetaLightLab*180.0/TMath::Pi());
+    hThetaCM->Fill(thetaLightCM*180.0/TMath::Pi());
+
+
+
+    // heavy ejectile kinematics in center of mass system
+    TLorentzVector lHeavy;
+    lHeavy.SetVect(-lLight.Vect());
+    lHeavy.SetE(energyCm-lLight.E());
+
+    miss = -lHeavy.M()+massHeavy;
+
+    //printf("miss %f\n", miss);
+    
+
+    // fill histograms
+
+    hMiss->Fill(miss);
+    //hMissTheta->Fill(vLight.Theta()*180.0/TMath::Pi(), miss);
+
+    hdEE->Fill(energyKinLight,detEnergyLoss[firstDetID]);
+    //hEth->Fill(thetaLightLab*180.0/TMath::Pi(), energyKinLight);
+
+
+    energyKinProj/=(Float_t)projA; // MeV/u`
 
     treeAnalysis2[channel]->Fill();
 
