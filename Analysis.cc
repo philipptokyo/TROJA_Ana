@@ -245,7 +245,7 @@ Bool_t Analysis::Init(){
     treeAnalysis2[f]->Branch("anaFIdetID", &firstDetID, "anaFIdetID/I");
 
     treeAnalysis2[f]->Branch("simLightThetaLab", &thetaLightLab, "simLightThetaLab/D");
-//    treeAnalysis2[f]->Branch("simLightThetaCM", &thetaLightCM, "simLightThetaCM/D");                           // !!!!!!!!!!!!!!!!!!!!!!!!!!!!! needs bug fixing !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    treeAnalysis2[f]->Branch("simLightThetaCM", &thetaLightCM, "simLightThetaCM/D");                           // !!!!!!!!!!!!!!!!!!!!!!!!!!!!! needs bug fixing !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     treeAnalysis2[f]->Branch("simLightPhi", &phiLight, "simLightPhi/D");
 
 
@@ -712,22 +712,28 @@ void Analysis::MissingMass(Int_t channel){
     //vLight.SetMagThetaPhi(momentumLight, theta, phi); // without beam position spread
 
 
+
     // for the root tree
     thetaLightLab = vLight.Theta(); 
     phiLight = vLight.Phi(); 
+
 
     TLorentzVector lLight;
     lLight.SetVect(vLight);
     lLight.SetE(energyTotLight);
 
-    TLorentzVector lL=lLight;
+//    TLorentzVector lL=lLight;
 
     lLight.Boost(-vCm);
-    //thetaLightCM=lLight.Theta();
+    thetaLightCM = TMath::Pi() - lLight.Theta();
 
 
-    lL.Boost(vCm);
-    thetaLightCM=lL.Theta();
+
+//vLight.SetTheta(-vLight.Theta() + TMath::Pi());
+//lL.SetTheta(vLight.Theta() - TMath::Pi());
+
+//    lL.Boost(-vCm);
+//    thetaLightCM=lL.Theta();
 
 
     hThetaLab->Fill(thetaLightLab*180.0/TMath::Pi());
