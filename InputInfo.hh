@@ -4,7 +4,7 @@
 #include "LibPerso.h"
 
 #define maxNumberOfStates 10
-#define maxCutFiles 2
+#define maxCutType 3
 
 class InputInfo
 {
@@ -21,7 +21,7 @@ class InputInfo
         char fOutFileNameAnalysis[500];
         char fOedoSimFileName[500];
         
-        char fFileNameCuts[maxCutFiles][500];
+        char fFileNameCuts[maxCutType][500];
         Int_t fNumberOfCutFiles;
 
         // general, for all programs

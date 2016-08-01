@@ -9,7 +9,7 @@
 #include "Nucleus.hh"
 #include "Kinematics.hh"
 
-// maxCutFiles defined in InputInfo.hh
+// maxCutType defined in InputInfo.hh
 #define maxCuts 10 // per cut file 
 
 class Analysis
@@ -43,9 +43,9 @@ class Analysis
 
     TTree* tree;
     TTree* treeBeam;
-    TTree* treeAnaHeader[maxCutFiles];
+    TTree* treeAnaHeader[maxCutType];
     TTree* treeAnalysis1;
-    TTree* treeAnalysis2[maxCutFiles];
+    TTree* treeAnalysis2[maxCutType];
     
     Int_t projA, projZ, targA, targZ;
     Int_t recoA, recoZ, ejecA, ejecZ;
@@ -53,11 +53,12 @@ class Analysis
 
     Nucleus* nucProj;
     Nucleus* nucTarg;
-    Nucleus* nucEjec[maxCutFiles];
-    Nucleus* nucReco[maxCutFiles];
+    Nucleus* nucEjec[maxCutType];
+    Nucleus* nucReco[maxCutType];
 
     Float_t energyKinProj;  
     Float_t beamX, beamY, beamZ;
+    Float_t beamA, beamB;
     Float_t beamTheta, beamPhi;
     Double_t genLightEnergy, genLightTheta, genLightThetaCM, genLightPhi;
     Float_t genExcEn;
@@ -95,8 +96,8 @@ class Analysis
     Double_t thetaLightLab, thetaLightCM, phiLight;
     Double_t miss;
     
-    Bool_t cutExists[maxCutFiles][maxCuts];
-    TCutG* cut[maxCutFiles][maxCuts];
+    Bool_t cutExists[maxCutType][maxCuts];
+    TCutG* cut[maxCutType][maxCuts];
 
     TRandom3* randomizer; 
 

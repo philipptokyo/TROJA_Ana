@@ -2,7 +2,7 @@
 
 #include "Nucleus.hh"
 
-#define warningType maxCutFiles+1
+#define warningType maxCutType+1
 
 
 Analysis::Analysis(InputInfo *i, DetectorInfo* d){
@@ -10,7 +10,7 @@ Analysis::Analysis(InputInfo *i, DetectorInfo* d){
   info = i;
   detInfo = d;
   
-  for(Int_t f=0; f<maxCutFiles; f++){
+  for(Int_t f=0; f<maxCutType; f++){
   for(Int_t i=0; i<maxCuts; i++){
     cutExists[f][i]=false; // -1: doesn't exist, >-1: type of cut/reaction (0 = elastic, 1 = (d,p), ...)
   }
@@ -43,6 +43,8 @@ void Analysis::ResetVariables(){
   beamX = 0.0; 
   beamY = 0.0;  
   beamZ = 0.0;    
+  beamA = 0.0;  
+  beamB = 0.0;    
   beamTheta = 0.0;
   beamPhi = 0.0;
   genLightEnergy = 0.0;
@@ -111,7 +113,8 @@ Bool_t Analysis::Init(){
   hMiss=new TH1F("hMiss", "Missing Mass", 600, -5.0, 1.0);
   //hMissTheta=new TH2F("hMissTheta", "Missing mass vs. theta proton", 360,0,180,1000,-20,20);
 
-  hdEE=new TH2F("hdEE_analysis2", "delta E vs. E, Analysis2", 1000,0,50,100,0,8);
+  //hdEE=new TH2F("hdEE_analysis2", "delta E vs. E, Analysis2", 1000,0,50,100,0,8);
+  hdEE=new TH2F("hdEE_analysis2", "delta E vs. E, Analysis2", 1000,0,25,100,0,8);
   hEth=new TH2F("hEth", "E proton vs. theta lab", 180,0,180,600,0,60);
 
   hThetaLab = new TH1F("hThetaLab","Theta Lab",180,0,180);
@@ -164,6 +167,8 @@ Bool_t Analysis::Init(){
   treeBeam->SetBranchAddress("beamX", &beamX);
   treeBeam->SetBranchAddress("beamY", &beamY);
   treeBeam->SetBranchAddress("beamZ", &beamZ);
+  treeBeam->SetBranchAddress("beamA", &beamA);
+  treeBeam->SetBranchAddress("beamB", &beamB);
   treeBeam->SetBranchAddress("beamTheta", &beamTheta);
   treeBeam->SetBranchAddress("beamPhi", &beamPhi);
   treeBeam->SetBranchAddress("excitationEnergy", &genExcEn);
@@ -206,9 +211,9 @@ Bool_t Analysis::Init(){
 
 
 
-  for(Int_t f=0; f<maxCutFiles; f++){
+  for(Int_t f=0; f<maxCutType; f++){
     
-    treeAnalysis2[f] = new TTree(Form("analysis2_%d", f), Form("Analysis2 (missing mass) tree, reaction channel %d", f));
+    treeAnalysis2[f] = new TTree(Form("analysis2_%d", f), Form("Analysis2 (missing mass) tree, reaction channel/type %d", f));
 
     treeAnalysis2[f]->Branch("eventNumber", &eventNumber, "eventNumber/I");
     // write generated data to tree
@@ -220,6 +225,8 @@ Bool_t Analysis::Init(){
     treeAnalysis2[f]->Branch("genBeamX", &beamX, "genBeamX/F");
     treeAnalysis2[f]->Branch("genBeamY", &beamY, "genBeamY/F");
     treeAnalysis2[f]->Branch("genBeamZ", &beamZ, "genBeamZ/F");
+    treeAnalysis2[f]->Branch("genBeamA", &beamA, "genBeamA/F");
+    treeAnalysis2[f]->Branch("genBeamB", &beamB, "genBeamB/F");
     treeAnalysis2[f]->Branch("genBeamEnergy", &energyKinProj, "genBeamEnergy/F");
     treeAnalysis2[f]->Branch("genBeamTheta", &beamTheta, "genBeamTheta/F");
     treeAnalysis2[f]->Branch("genBeamPhi", &beamPhi, "genBeamPhi/F");
@@ -316,7 +323,7 @@ void Analysis::CreateHeader(){
   massProj = nucProj->GetMass();
   massTarget = nucTarg->GetMass(); 
   
-  for(Int_t f=0; f<maxCutFiles; f++){
+  for(Int_t f=0; f<maxCutType; f++){
     switch(f) {
       case 0: { // elastic scattering
         recoA = targA;
@@ -329,6 +336,13 @@ void Analysis::CreateHeader(){
         recoA = targA-1;
         recoZ = targZ;
         ejecA = projA+1;
+        ejecZ = projZ;
+        break;
+      }
+      case 2: { // (t,p) one neutron transfer
+        recoA = targA-2;
+        recoZ = targZ;
+        ejecA = projA+2;
         ejecZ = projZ;
         break;
       }
@@ -362,8 +376,8 @@ void Analysis::CreateHeader(){
     treeAnaHeader[f]->Fill();
     treeAnaHeader[f]->Write(Form("anaHeader%d", f));
     
-    printf("Wrote for reaction channel %d: projectile A/Z %d/%d, target A/Z %d/%d, recoiled A/Z %d/%d, ejectile A/Z %d/%d\n", f, projA,projZ, targA,targZ, recoA,recoZ, ejecA,ejecZ);
-    printf("Wrote for reaction channel %d: mass projectile %f, mass target %f, mass recoiled %f, mass ejectile %f, q-value %f\n", f, massProj, massTarget, massLight, massHeavy, qValue);
+    printf("Wrote for reaction channel/type %d: projectile A/Z %d/%d, target A/Z %d/%d, recoiled A/Z %d/%d, ejectile A/Z %d/%d\n", f, projA,projZ, targA,targZ, recoA,recoZ, ejecA,ejecZ);
+    printf("Wrote for reaction channel/type %d: mass projectile %f, mass target %f, mass recoiled %f, mass ejectile %f, q-value %f\n", f, massProj, massTarget, massLight, massHeavy, qValue);
 
 
   }
@@ -419,7 +433,7 @@ void Analysis::ProcessDetectorHits(){  // private
 void Analysis::Analysis1(){
   
   // define histograms
-  TH2F* hdEE=new TH2F("hdEE_analysis1", "delta E vs. E, Analysis1 ", 1000,0,50,100,0,8);
+  TH2F* hdEE=new TH2F("hdEE_analysis1", "delta E vs. E, Analysis1 ", 1000,0,25,100,0,8);
 
 
   Int_t goodEvents=0;
@@ -495,8 +509,8 @@ void Analysis::Analysis1(){
 void Analysis::Analysis2(){
  
 
-  Bool_t doAnalysisType[maxCutFiles] = {false};
-  //for(Int_t f=0; f<maxCutFiles; f++){
+  Bool_t doAnalysisType[maxCutType] = {false};
+  //for(Int_t f=0; f<maxCutType; f++){
   //  doAnalysisType[f] = false;
   //}
   Int_t goodEvents=0;
@@ -514,7 +528,7 @@ void Analysis::Analysis2(){
     }
      
     ResetVariables();
-    for(Int_t f=0; f<maxCutFiles; f++){
+    for(Int_t f=0; f<maxCutType; f++){
       doAnalysisType[f] = false;
     }
 
@@ -537,7 +551,7 @@ void Analysis::Analysis2(){
     
     
     // select reaction channel from grahical cuts
-    for(Int_t f=0; f<maxCutFiles; f++){
+    for(Int_t f=0; f<maxCutType; f++){
       for(Int_t i=0; i<maxCuts; i++){
         if(cutExists[f][i]){
           if(cut[f][i]->IsInside(energyKinLight, detEnergyLoss[firstDetID])){
@@ -556,7 +570,7 @@ void Analysis::Analysis2(){
     }
     
     
-    for(Int_t f=0; f<maxCutFiles; f++){
+    for(Int_t f=0; f<maxCutType; f++){
       if(doAnalysisType[f]){
         MissingMass(f);
         if(type!=warningType){
@@ -576,7 +590,7 @@ void Analysis::Analysis2(){
 
 
   fileAnalysis->cd();
-  for(Int_t f=0; f<maxCutFiles; f++){
+  for(Int_t f=0; f<maxCutType; f++){
     treeAnalysis2[f]->Write(Form("analysis2_%d", f));
   }
 
@@ -604,41 +618,45 @@ void Analysis::MissingMass(Int_t channel){
   // load masses from header
   treeAnaHeader[channel]->GetEvent(0);
 
+  
+  // projectile kinematics
+
+  energyKinProj*=(Float_t)projA; 
+
   // smear out data with detector position resolutions
   if(info->NoBeamTracking()){
     beamX=0.0;
     beamY=0.0;
     beamZ=0.0;
+    beamA=0.0;
+    beamB=0.0;
   }else{
     beamX=randomizer->Gaus(beamX, info->fResTargetX); // in mm
     beamY=randomizer->Gaus(beamY, info->fResTargetY);
     beamZ=randomizer->Gaus(beamZ, info->fResTargetZ);
-  }
-
-
-  // projectile kinematics
-
-  energyKinProj*=(Float_t)projA; 
-
-  if(!info->NoBeamTracking()){
+    beamA=randomizer->Gaus(beamA, info->fResTargetA);
+    beamB=randomizer->Gaus(beamB, info->fResTargetB);
     energyKinProj = randomizer->Gaus(energyKinProj, info->fResBeamE);
   }
-    
+
+
    
-  TVector3 vProj(0.0, 0.0, 1.0); 
-  if(!info->NoBeamTracking()){
-    vProj.SetMagThetaPhi(1.0, beamTheta, beamPhi);                                         // comment out this line to see the effect of no beam profile correction
-  
-    // rotate by beam angular resolution
-    vProj.RotateY(randomizer->Gaus(0.0, (info->fResTargetA)/1000.0)); // resolutions in mrad
-    vProj.RotateX(randomizer->Gaus(0.0, (info->fResTargetB)/1000.0));
-  }
+//  TVector3 vProj(0.0, 0.0, 1.0); 
+//  if(!info->NoBeamTracking()){
+//    vProj.SetMagThetaPhi(1.0, beamTheta, beamPhi);                                         // comment out this line to see the effect of no beam profile correction
+//  
+//    // rotate by beam angular resolution
+//    vProj.RotateY(randomizer->Gaus(0.0, (info->fResTargetA)/1000.0)); // resolutions in mrad
+//    vProj.RotateX(randomizer->Gaus(0.0, (info->fResTargetB)/1000.0));
+//  }
  
   energyTotLight = energyKinLight+massLight;
 
-  TVector3 vLightOnly(simDetectorHitPos[0]-beamX, simDetectorHitPos[1]-beamY, simDetectorHitPos[2]-beamZ); // take beam position into account
-  //TVector3 vLight(vLightOnly-vProj); // take beam angle into account
-  TVector3 vLight(vLightOnly);
+  TVector3 vLight(simDetectorHitPos[0]-beamX, simDetectorHitPos[1]-beamY, simDetectorHitPos[2]-beamZ); // take beam position into account
+  
+  vLight.RotateY(-beamA/1000.0);
+  vLight.RotateX(-beamB/1000.0);
+  
   vLight.SetMag(1.0);
 
   //vLight.SetMagThetaPhi(momentumLight, theta, phi); // without beam position spread
@@ -907,11 +925,11 @@ void Analysis::MissingMass(Int_t channel){
 Bool_t Analysis::GetCuts(){
   
   Int_t filesFound=0;
-  TFile* file[maxCutFiles];
+  TFile* file[maxCutType];
   Bool_t haveACut = false;
   char tmpName[100];
 
-  for(Int_t f=0; f<maxCutFiles; f++){
+  for(Int_t f=0; f<maxCutType; f++){
     
     if(strcmp(info->fFileNameCuts[f],"")==0){
       continue;

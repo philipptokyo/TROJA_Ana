@@ -151,9 +151,9 @@ void InputInfo::parse(char filename[100]){
 		}
 		else if(strcmp(temp[0],"dE-E_cut_file_type_name")==0){
                         Int_t cutType = atoi(temp[1]);
-                        if(cutType >= maxCutFiles){
+                        if(cutType >= maxCutType){
                           cout << "Invalid cut type " << cutType << endl;
-                          cout << "Available types at the moment: 0 = elastic scattering, 1 = (d,p) transfer reaction" << endl;
+                          cout << "Available types at the moment: 0 = no transfer / elastic scattering, 1 = one neutron transfer, e.g. (d,p), 2 = two neutron transfer, e.g. (t,p)" << endl;
                           abort();
                         }
 			strcpy(fFileNameCuts[cutType],temp[2]);
