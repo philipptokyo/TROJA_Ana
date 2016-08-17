@@ -114,7 +114,10 @@ Bool_t Analysis::Init(){
   //hMissTheta=new TH2F("hMissTheta", "Missing mass vs. theta proton", 360,0,180,1000,-20,20);
 
   //hdEE=new TH2F("hdEE_analysis2", "delta E vs. E, Analysis2", 1000,0,50,100,0,8);
-  hdEE=new TH2F("hdEE_analysis2", "delta E vs. E, Analysis2", 1000,0,25,100,0,8);
+  hdEE_A=new TH2F("hdEE_A_analysis2", "delta E vs. E, all directions, Analysis2", 1000,0,25,100,0,8);
+  hdEE_B=new TH2F("hdEE_B_analysis2", "delta E vs. E, backward direction, Analysis2", 1000,0,25,100,0,8);
+  hdEE_F=new TH2F("hdEE_F_analysis2", "delta E vs. E, forward direction, Analysis2", 1000,0,25,100,0,8);
+  
   hEth=new TH2F("hEth", "E proton vs. theta lab", 180,0,180,600,0,60);
 
   hThetaLab = new TH1F("hThetaLab","Theta Lab",180,0,180);
@@ -433,7 +436,9 @@ void Analysis::ProcessDetectorHits(){  // private
 void Analysis::Analysis1(){
   
   // define histograms
-  TH2F* hdEE=new TH2F("hdEE_analysis1", "delta E vs. E, Analysis1 ", 1000,0,25,100,0,8);
+  TH2F* hdEE_A=new TH2F("hdEE_A_analysis1", "delta E vs. E, all directions, Analysis1 ", 1000,0,25,100,0,8);
+  TH2F* hdEE_B=new TH2F("hdEE_B_analysis1", "delta E vs. E, backward direction, Analysis1 ", 1000,0,25,100,0,8);
+  TH2F* hdEE_F=new TH2F("hdEE_F_analysis1", "delta E vs. E, forward direction, Analysis1 ", 1000,0,25,100,0,8);
 
 
   Int_t goodEvents=0;
@@ -470,7 +475,13 @@ void Analysis::Analysis1(){
     //printf("event %d, have %d detector hits with sum energy %f\n", e, detHitSum, energyKinLight);
 
 
-    hdEE->Fill(energyKinLight,detEnergyLoss[firstDetID]);
+    hdEE_A->Fill(energyKinLight,detEnergyLoss[firstDetID]);
+    if(recoPosZ[firstDetID] < 0.0){ //backward
+      hdEE_B->Fill(energyKinLight,detEnergyLoss[firstDetID]);
+    }
+    if(recoPosZ[firstDetID] > 0.0){ //forward
+      hdEE_F->Fill(energyKinLight,detEnergyLoss[firstDetID]);
+    }
 
     treeAnalysis1->Fill();
 
@@ -484,7 +495,9 @@ void Analysis::Analysis1(){
   fileAnalysis->cd();
   treeAnalysis1->Write("analysis1");
 
-  hdEE->Write("dEE1");
+  hdEE_A->Write("dEE1_A");
+  hdEE_B->Write("dEE1_B");
+  hdEE_F->Write("dEE1_F");
 
   printf("Analysis1: Analyzed events writen to file '%s'\n\n", info->fOutFileNameAnalysis);
 
@@ -594,7 +607,10 @@ void Analysis::Analysis2(){
     treeAnalysis2[f]->Write(Form("analysis2_%d", f));
   }
 
-  hdEE->Write("dEE2");
+  hdEE_A->Write("dEE2_A");
+  hdEE_B->Write("dEE2_B");
+  hdEE_F->Write("dEE2_F");
+  
   hMiss->Write("missingMass");
   hEth->Write("Eth");
   hThetaLab->Write("hThetaLab");
@@ -692,7 +708,14 @@ void Analysis::MissingMass(Int_t channel){
   hMiss->Fill(miss);
   //hMissTheta->Fill(vLight.Theta()*180.0/TMath::Pi(), miss);
 
-  hdEE->Fill(energyKinLight,detEnergyLoss[firstDetID]);
+  hdEE_A->Fill(energyKinLight,detEnergyLoss[firstDetID]);
+  if(simDetectorHitPos[2] < 0.0){
+    hdEE_B->Fill(energyKinLight,detEnergyLoss[firstDetID]);
+  }
+  if(simDetectorHitPos[2] > 0.0){
+    hdEE_F->Fill(energyKinLight,detEnergyLoss[firstDetID]);
+  }
+
   hEth->Fill(thetaLightLab*180.0/TMath::Pi(), energyKinLight);
 
 

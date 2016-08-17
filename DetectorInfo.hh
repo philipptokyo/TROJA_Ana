@@ -34,6 +34,18 @@ typedef struct _geo
 
 
 
+typedef struct _tar
+{
+
+  string material;
+
+  Double_t center[3];
+  Double_t size[3]; 
+
+} tar;
+
+
+
 typedef struct _dat
 {
   Int_t eventNumber;
@@ -99,6 +111,7 @@ class DetectorInfo
         Double_t GetSize2(Int_t d) const { return detGeo[d].size[2] ;}
         Double_t GetSize3(Int_t d) const { return detGeo[d].size[3] ;}
         Double_t GetSize4(Int_t d) const { return detGeo[d].size[4] ;}
+Double_t GetSize(Int_t d, Int_t i) const { return detGeo[d].size[i] ;}
 
        Int_t GetNoStripsX(Int_t d) const { return detGeo[d].noStrips[0]; }
        Int_t GetNoStripsY(Int_t d) const { return detGeo[d].noStrips[1]; }
@@ -148,7 +161,14 @@ Double_t GetResPar(Int_t d, Int_t p) const { return detGeo[d].resPar[p] ;}
          void SetResType(Int_t d, Int_t t) { detGeo[d].resType=t; }
 void SetResPar(Int_t d, Int_t p, Double_t v) { detGeo[d].resPar[p]=v ;}
    
+
+   void SetTargetPosition(Double_t x, Double_t y, Double_t z) {fTarget.center[0]=x; fTarget.center[1]=y; fTarget.center[2]=z; }
+   void SetTargetSize(Double_t x, Double_t y, Double_t z) {fTarget.size[0]=x; fTarget.size[1]=y; fTarget.size[2]=z; }
+   void SetTargetMaterial(string mat) {fTarget.material=mat; }
    
+   Double_t GetTargetPosition(Int_t i) {return fTarget.center[i]; }
+       Double_t GetTargetSize(Int_t i) {return fTarget.size[i]; }
+            string GetTargetMaterial() {return fTarget.material; }
    
    
    
@@ -163,6 +183,8 @@ void SetResPar(Int_t d, Int_t p, Double_t v) { detGeo[d].resPar[p]=v ;}
     TRandom3* fRandomizer;
 
     geo detGeo[maxDetectors];
+
+    tar fTarget;
 
     Int_t fNoOfDet; // number of detectors
 

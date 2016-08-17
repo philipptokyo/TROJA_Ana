@@ -105,7 +105,9 @@ class Analysis
     TH1F* hMiss;
     //TH2F* hMissTheta;
   
-    TH2F* hdEE;
+    TH2F* hdEE_A;
+    TH2F* hdEE_B;
+    TH2F* hdEE_F;
     TH2F* hEth;
   
     TH1F* hThetaLab;
