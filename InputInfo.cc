@@ -37,6 +37,7 @@ InputInfo::InputInfo(){
   fProfileA=false;	
   fProfileB=false;
   fNoBeamTracking=false;	
+  fAddGammas=false;
   
   fResTargetX=0.0;
   fResTargetY=0.0;  
@@ -293,6 +294,10 @@ void InputInfo::parse(char filename[100]){
     else if(strcmp(temp[0],"resolution_beam_e")==0){
       fResBeamE=atof(temp[1]);
       cout << "Resolution of beam energy is set to '" << fResBeamE << "' MeV (sigma of a Gaussian)" << endl;
+    }
+    else if(strcmp(temp[0],"generate_gammas")==0){
+      fAddGammas=true;
+      cout << "Adding gammas in event generator" << endl;
     }
     else if(strcmp(temp[0],"source")==0){
       fSource=true;

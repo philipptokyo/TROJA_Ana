@@ -50,7 +50,7 @@ typedef struct _dat
 {
   Int_t eventNumber;
 
-  Double_t fIX, fIY, fIZ; // first interaction point, x, y, z
+  Double_t fIX, fIY, fIZ, fITheta; // first interaction point, x, y, z
 
   //Int_t noOfDet[maxDetectors];
   Int_t fIDetID; // ID of detector with first interaction point
@@ -67,8 +67,13 @@ typedef struct _dat
   Double_t hitPositionX[maxDetectors]; // x, y, z in cartesian coordinates, origin: center of target
   Double_t hitPositionY[maxDetectors]; // x, y, z in cartesian coordinates, origin: center of target
   Double_t hitPositionZ[maxDetectors]; // x, y, z in cartesian coordinates, origin: center of target
+  
+  
+  Double_t grapeEnergy;
 
 } dat;
+
+
 
 
 
@@ -131,6 +136,7 @@ Double_t GetResPar(Int_t d, Int_t p) const { return detGeo[d].resPar[p] ;}
     TRotation* GetRotationMatrix(Int_t d);
     TRotation GetInverseRotationMatrix(Int_t d);
 
+    Bool_t IncludeGrape() {return fIncludeGrape;}
 
     // setter
     
@@ -187,6 +193,8 @@ void SetResPar(Int_t d, Int_t p, Double_t v) { detGeo[d].resPar[p]=v ;}
     tar fTarget;
 
     Int_t fNoOfDet; // number of detectors
+
+    Bool_t fIncludeGrape;
 
 
 };

@@ -53,6 +53,7 @@ class InputInfo
   Bool_t NoBeamTracking(){return fNoBeamTracking;};
   Bool_t IncludeElastic(){return fIncludeElastic;};
   Bool_t Source(){return fSource;};
+  Bool_t AddGammas(){return fAddGammas;}
   
   //analysis related
   Float_t fResTargetX, fResTargetY, fResTargetZ; // should be obtained from beam tracking detector(s)
@@ -81,6 +82,7 @@ class InputInfo
   Bool_t fNoBeamTracking;
   Bool_t fIncludeElastic; 
   Bool_t fSource;
+  Bool_t fAddGammas;
   
   	
   

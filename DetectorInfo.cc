@@ -33,6 +33,8 @@ DetectorInfo::DetectorInfo()
 
   fRandomizer = new TRandom3();
   fRandomizer->SetSeed(0);
+
+  fIncludeGrape=false;
   
 }
 
@@ -64,9 +66,9 @@ void DetectorInfo::ClearGeometry()
          SetName(d, "");
          SetType(d, "");
 
-    for(Int_t p=0; p<GetResNoPars(d); p++){
-       SetResPar(d, p, 0.0);
-    }
+//    for(Int_t p=0; p<GetResNoPars(d); p++){
+//       SetResPar(d, p, 0.0);
+//    }
       SetResType(d, 0);
   }
 
@@ -96,7 +98,7 @@ void DetectorInfo::ResetData()
     detData.hitPositionZ[d]=NAN;
   }
 
-  
+  detData.grapeEnergy=NAN;  
   
 }
 
@@ -410,6 +412,9 @@ void DetectorInfo::Parse(string filename)
         printf("%f ", GetResPar(index, p));
       }
       printf("\n");
+    }
+    else if(strcmp(temp[0],"include_grape")==0){
+      fIncludeGrape=true;
     }
     else if(strcmp(temp[0],"target")==0){
       fTarget.material = temp[1];

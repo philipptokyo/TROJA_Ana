@@ -39,7 +39,8 @@ void Analysis::ResetVariables(){
   massHeavy=0.0;
   qValue=0.0;
 
-  energyKinProj = 10.0*132.0;  // 10 MeV/u
+  //energyKinProj = 10.0*132.0;  // 10 MeV/u
+  energyKinProj = 0.0;  
   beamX = 0.0; 
   beamY = 0.0;  
   beamZ = 0.0;    
@@ -166,7 +167,7 @@ Bool_t Analysis::Init(){
   treeBeam->SetBranchAddress("lightTheta", &genLightTheta);
   treeBeam->SetBranchAddress("lightThetaCM", &genLightThetaCM);
   treeBeam->SetBranchAddress("lightPhi", &genLightPhi);
-  treeBeam->SetBranchAddress("beamEnergy", &energyKinProj); // is in MeV/u
+  treeBeam->SetBranchAddress("beamEnergy", &energyKinProj); // is in AMeV
   treeBeam->SetBranchAddress("beamX", &beamX);
   treeBeam->SetBranchAddress("beamY", &beamY);
   treeBeam->SetBranchAddress("beamZ", &beamZ);
@@ -636,7 +637,6 @@ void Analysis::MissingMass(Int_t channel){
 
   
   // projectile kinematics
-
   energyKinProj*=(Float_t)projA; 
 
   // smear out data with detector position resolutions
@@ -646,6 +646,7 @@ void Analysis::MissingMass(Int_t channel){
     beamZ=0.0;
     beamA=0.0;
     beamB=0.0;
+    energyKinProj=info->fBeamEnergy*(Float_t)projA;
   }else{
     beamX=randomizer->Gaus(beamX, info->fResTargetX); // in mm
     beamY=randomizer->Gaus(beamY, info->fResTargetY);
