@@ -62,6 +62,7 @@ class Analysis
     Float_t beamTheta, beamPhi;
     Double_t genLightEnergy, genLightTheta, genLightThetaCM, genLightPhi;
     Float_t genExcEn;
+    Int_t genState;
 
 
     Int_t           eventNumber;
@@ -95,6 +96,8 @@ class Analysis
     Double_t simDetectorHitPos[3]; // x, y, z; position used for analysis
     Double_t thetaLightLab, thetaLightCM, phiLight;
     Double_t miss;
+    
+    Double_t energyGamma;
     
     Bool_t cutExists[maxCutType][maxCuts];
     TCutG* cut[maxCutType][maxCuts];

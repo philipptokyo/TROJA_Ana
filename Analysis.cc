@@ -53,6 +53,7 @@ void Analysis::ResetVariables(){
   genLightThetaCM = 0.0;
   genLightPhi = 0.0;
   genExcEn = 0.0;
+  genState = -1;
 
   eventNumber=0; // read from tree
   for(Int_t i=0; i<maxDetectors; i++){
@@ -92,6 +93,8 @@ void Analysis::ResetVariables(){
   thetaLightCM=0.0;
   phiLight=0.0;
   miss=0.0;
+
+  energyGamma=0.0;
 
 
 
@@ -175,6 +178,7 @@ Bool_t Analysis::Init(){
   treeBeam->SetBranchAddress("beamB", &beamB);
   treeBeam->SetBranchAddress("beamTheta", &beamTheta);
   treeBeam->SetBranchAddress("beamPhi", &beamPhi);
+  treeBeam->SetBranchAddress("state", &genState);
   treeBeam->SetBranchAddress("excitationEnergy", &genExcEn);
 
   tree->SetBranchAddress("eventNumber", &eventNumber);
@@ -187,6 +191,8 @@ Bool_t Analysis::Init(){
   tree->SetBranchAddress("FIy", &FIy);
   tree->SetBranchAddress("FIz", &FIz);
   tree->SetBranchAddress("FIdetID", &FIdetID);
+  
+  tree->SetBranchAddress("grapeEnergy", &energyGamma);
 
 
   fileAnalysis = new TFile(info->fOutFileNameAnalysis, "recreate");
@@ -212,6 +218,8 @@ Bool_t Analysis::Init(){
   treeAnalysis1->Branch("simFIdetID", &FIdetID, "simFIdetID/I");
   //treeAnalysis1->Branch("simLightThetaLab", &thetaLightLab, "simLightThetaLab/D");
   treeAnalysis1->Branch("anaFIdetID", &firstDetID, "anaFIdetID/I");
+  
+  treeAnalysis1->Branch("energyGamma", &energyGamma, "energyGamma/D");
 
 
 
@@ -235,6 +243,7 @@ Bool_t Analysis::Init(){
     treeAnalysis2[f]->Branch("genBeamTheta", &beamTheta, "genBeamTheta/F");
     treeAnalysis2[f]->Branch("genBeamPhi", &beamPhi, "genBeamPhi/F");
     treeAnalysis2[f]->Branch("genExcEn", &genExcEn, "genExcEn/F");
+    treeAnalysis2[f]->Branch("genState", &genState, "genState/I");
 
     // write simulated data to tree
     // these values are with resolutions!!!!!!!!!!!!!
@@ -279,6 +288,8 @@ Bool_t Analysis::Init(){
     //treeAnalysis2[f]->Branch("anaHeavyGamma", &gammaHeavy, "anaHeavyGamma/F");
     //treeAnalysis2[f]->Branch("anaHeavyTotalEnergy", &energyTotHeavy, "anaHeavyTotalEnergy/F");
     //treeAnalysis2[f]->Branch("anaHeavyMomentum", &momentumHeavy, "anaHeavyMomentum/F");
+    
+    treeAnalysis2[f]->Branch("energyGamma", &energyGamma, "energyGamma/D");
 
   } // treeAnalysis2
 
