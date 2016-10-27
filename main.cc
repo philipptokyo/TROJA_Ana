@@ -12,6 +12,7 @@
 
 #include "InputInfo.hh"
 #include "DetectorInfo.hh"
+#include "EnLoss.hh"
 #include "Analysis.hh"
 
 #include "/home/philipp/sim/troja/include/DetectorGlobals.hh"
@@ -57,7 +58,7 @@ Int_t main(Int_t argc, char **argv){
   
   
   cout << "Welcome to troja analyzer" << endl;
-  
+
   
   cout << "Input arguments: " << endl;
   for (int i = 1; i < argc; i++) {
@@ -81,6 +82,14 @@ Int_t main(Int_t argc, char **argv){
   randomizer->SetSeed(0); 
   
 
+  EnLoss* enlo = new EnLoss(info, detInfo);
+  enlo->CollectData("EnLossData/enLoss_tables_p_in_CD2.csv", 0);
+
+  Double_t en=6.0, x=15.0 ,enloca=0.0;
+  enloca=enlo->CalcEnLoss(en, x, 0);
+  printf("energy loss for %f MeV through %f micron is %f\n", en, x, enloca);
+
+  return 0;
 
   TStopwatch* watch = new TStopwatch();
   watch->Start();

@@ -95,6 +95,7 @@ void Analysis::ResetVariables(){
   miss=0.0;
 
   energyGamma=0.0;
+  grapeDet=-1;
 
 
 
@@ -193,6 +194,7 @@ Bool_t Analysis::Init(){
   tree->SetBranchAddress("FIdetID", &FIdetID);
   
   tree->SetBranchAddress("grapeEnergy", &energyGamma);
+  tree->SetBranchAddress("grapeDetector", &grapeDet);
 
 
   fileAnalysis = new TFile(info->fOutFileNameAnalysis, "recreate");
@@ -220,6 +222,7 @@ Bool_t Analysis::Init(){
   treeAnalysis1->Branch("anaFIdetID", &firstDetID, "anaFIdetID/I");
   
   treeAnalysis1->Branch("energyGamma", &energyGamma, "energyGamma/D");
+  treeAnalysis1->Branch("energyGammaDC", &energyGammaDC, "energyGammaDC/D");
 
 
 
@@ -290,6 +293,7 @@ Bool_t Analysis::Init(){
     //treeAnalysis2[f]->Branch("anaHeavyMomentum", &momentumHeavy, "anaHeavyMomentum/F");
     
     treeAnalysis2[f]->Branch("energyGamma", &energyGamma, "energyGamma/D");
+    treeAnalysis2[f]->Branch("energyGammaDC", &energyGammaDC, "energyGammaDC/D");
 
   } // treeAnalysis2
 
@@ -689,6 +693,16 @@ void Analysis::MissingMass(Int_t channel){
 
   //vLight.SetMagThetaPhi(momentumLight, theta, phi); // without beam position spread
 
+
+  // energy loss in target, correction
+  // roughly
+  //if(vLight.Theta()<(110.0*TMath::Pi()/180.0)){
+  //  energyKinLight+=0.14;
+  //}else{
+  //  energyKinLight+=0.14;
+  //}
+  //energyKinLight+=0.45;
+
   TLorentzVector lLight(vLight, energyTotLight*1000.0);
   if(lLight.Mag()>0){
     lLight.SetRho( TMath::Sqrt( (energyKinLight+massLight)*(energyKinLight+massLight) - massLight*massLight )*1000 );
@@ -729,6 +743,32 @@ void Analysis::MissingMass(Int_t channel){
   }
 
   hEth->Fill(thetaLightLab*180.0/TMath::Pi(), energyKinLight);
+  
+
+  
+  // Doppler correction
+  if(grapeDet>-1){
+    Float_t projGamma = (energyKinProj / massProj) + 1.0;
+    Float_t projBeta = TMath::Sqrt(1.0 - 1.0/(projGamma*projGamma));
+
+    Float_t th=0.0;
+    if(grapeDet<6) th=70.0;
+    if(grapeDet>5 && grapeDet<12) th=90.0;
+    if(grapeDet>11) th=110.0;
+
+    energyGammaDC = energyGamma * projGamma * (1.0 - (projBeta * TMath::Cos((th/180.0)*TMath::Pi())));
+
+
+
+  }else{
+    energyGammaDC=NAN;
+  }
+
+
+
+
+
+
 
 
   energyKinProj/=(Float_t)projA; // AMeV

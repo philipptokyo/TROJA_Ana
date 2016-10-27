@@ -27,7 +27,7 @@ DetectorInfo::DetectorInfo()
   ClearGeometry();
   ResetData();
 
-  SetTargetMaterial("G4_POLYETHYLENE");
+  SetTargetMaterial("G4_Galactic");
   SetTargetPosition(0.0, 0.0, 0.0);
   SetTargetSize(60, 60, 0.001);
 
@@ -35,6 +35,8 @@ DetectorInfo::DetectorInfo()
   fRandomizer->SetSeed(0);
 
   fIncludeGrape=false;
+  fNumberOfGrapeDetectors=6;
+  fIncludeBeamPipe=false;
   
 }
 
@@ -97,9 +99,27 @@ void DetectorInfo::ResetData()
     detData.hitPositionY[d]=NAN;
     detData.hitPositionZ[d]=NAN;
   }
-
-  detData.grapeEnergy=NAN;  
   
+
+  detData.grapeDetMul=0;
+  //detData.grapeCryMul=0;
+  //detData.grapeSegMul=0;
+  for(Int_t d=0; d<grapeMaxDet; d++){
+    detData.grapeCryMul[d]=0;
+    detData.grapeDetEnergy[d]=NAN;
+    for(Int_t c=0; c<grapeMaxCry; c++){
+      detData.grapeSegMul[d][c]=0;
+      detData.grapeCryEnergy[d][c]=NAN;
+      for(Int_t s=0; s<grapeMaxSeg; s++){
+        detData.grapeSegEnergy[d][c][s]=NAN;
+      }
+    }
+  }
+  //detData.grapeEnergy=NAN;  
+  //detData.grapeDet=-1;
+  //detData.grapeCrystal=-1;
+  //detData.grapeSegment=-1;
+
 }
 
 
@@ -415,6 +435,12 @@ void DetectorInfo::Parse(string filename)
     }
     else if(strcmp(temp[0],"include_grape")==0){
       fIncludeGrape=true;
+      fNumberOfGrapeDetectors=atoi(temp[1]);
+      printf("Including %d GRAPE detectors\n", fNumberOfGrapeDetectors);
+    }
+    else if(strcmp(temp[0],"include_beam_pipe")==0){
+      fIncludeBeamPipe=true;
+      printf("Inlcuding beam pipe\n");
     }
     else if(strcmp(temp[0],"target")==0){
       fTarget.material = temp[1];

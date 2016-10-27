@@ -1,0 +1,184 @@
+{
+  TFile* filePhy1000 = TFile::Open("/mnt/raid/OEDO/philipp/analysis/132Sn_test_1000.root", "read"); // physics simulation
+  TFile* filePhy1100 = TFile::Open("/mnt/raid/OEDO/philipp/analysis/132Sn_test_1100.root", "read"); // physics simulation
+  TFile* filePhy1200 = TFile::Open("/mnt/raid/OEDO/philipp/analysis/132Sn_test_1200.root", "read"); // physics simulation
+  TFile* filePhy1300 = TFile::Open("/mnt/raid/OEDO/philipp/analysis/132Sn_test_1300.root", "read"); // physics simulation
+  TFile* filePhy1400 = TFile::Open("/mnt/raid/OEDO/philipp/analysis/132Sn_test_1400.root", "read"); // physics simulation
+  TFile* filePhy1500 = TFile::Open("/mnt/raid/OEDO/philipp/analysis/132Sn_test_1500.root", "read"); // physics simulation
+//  TFile* fileAcc = TFile::Open("/mnt/raid/OEDO/philipp/analysis/132Sn_test_acc.root" , "read");  // acceptance
+  TFile* fileFre1000 = TFile::Open("/mnt/raid/OEDO/philipp/events/132Sn_test_1000.root"  , "read");   // fresco events
+  TFile* fileFre1100 = TFile::Open("/mnt/raid/OEDO/philipp/events/132Sn_test_1100.root"  , "read");   // fresco events
+  TFile* fileFre1200 = TFile::Open("/mnt/raid/OEDO/philipp/events/132Sn_test_1200.root"  , "read");   // fresco events
+  TFile* fileFre1300 = TFile::Open("/mnt/raid/OEDO/philipp/events/132Sn_test_1300.root"  , "read");   // fresco events
+  TFile* fileFre1400 = TFile::Open("/mnt/raid/OEDO/philipp/events/132Sn_test_1400.root"  , "read");   // fresco events
+  TFile* fileFre1500 = TFile::Open("/mnt/raid/OEDO/philipp/events/132Sn_test_1500.root"  , "read");   // fresco events
+//  TFile* fileNor = TFile::Open("/mnt/raid/OEDO/philipp/events/132Sn_test_acc.root"  , "read");   // generated events for normalization
+
+  TFile* fileBeam = TFile::Open("/mnt/raid/OEDO/OEDO_Matsushita/132Sn/3rd_order/oedo_132sn_10MeV_short.root", "read");
+  fileBeam->cd();
+  events->Draw("energy>>beamProfiletmp(100,0,35)");
+  TH1F* hBeamProfile = (TH1F*)beamProfiletmp->Clone();
+
+  // scaling
+  Float_t scaling[6]={1.0};
+  for(Int_t i=0; i<6; i++){
+    Float_t e = (1000.0 + 100.0*i)/132.0;
+    Int_t b = hBeamProfile->FindBin(e);
+    scaling[i]=hBeamProfile->GetBinContent(b);
+    printf("Beam energy %f, intensity %f\n", e, scaling[i]);
+  }
+
+  char tmp[200]; 
+
+  filePhy1000->cd();
+  sprintf(tmp, "simLightThetaLab>>hphy1000tmp(100,1.5,2.8)");
+  //analysis->Draw("simLightThetaLab>>hphy1000tmp(100,1.5,2.8)","anaMissingMass>-1 && anaMissingMass<-0.7","");
+  analysis->Draw(tmp,"anaMissingMass>-1 && anaMissingMass<-0.7","");
+  TH1F* hPhy1000 = (TH1F*)hphy1000tmp->Clone();
+  hPhy1000->SetTitle("Physics Simulation, E=1000");
+
+  filePhy1100->cd();
+  analysis->Draw("simLightThetaLab>>hphy1100tmp(100,1.5,2.8)","anaMissingMass>-1 && anaMissingMass<-0.7","");
+  TH1F* hPhy1100 = (TH1F*)hphy1100tmp->Clone();
+  hPhy1100->SetTitle("Physics Simulation, E=1100");
+
+  filePhy1200->cd();
+  analysis->Draw("simLightThetaLab>>hphy1200tmp(100,1.5,2.8)","anaMissingMass>-1 && anaMissingMass<-0.7","");
+  TH1F* hPhy1200 = (TH1F*)hphy1200tmp->Clone();
+  hPhy1200->SetTitle("Physics Simulation, E=1200");
+
+  filePhy1300->cd();
+  analysis->Draw("simLightThetaLab>>hphy1300tmp(100,1.5,2.8)","anaMissingMass>-1 && anaMissingMass<-0.7","");
+  TH1F* hPhy1300 = (TH1F*)hphy1300tmp->Clone();
+  hPhy1300->SetTitle("Physics Simulation, E=1300");
+
+  filePhy1400->cd();
+  analysis->Draw("simLightThetaLab>>hphy1400tmp(100,1.5,2.8)","anaMissingMass>-1 && anaMissingMass<-0.7","");
+  TH1F* hPhy1400 = (TH1F*)hphy1400tmp->Clone();
+  hPhy1400->SetTitle("Physics Simulation, E=1400");
+
+  filePhy1500->cd();
+  analysis->Draw("simLightThetaLab>>hphy1500tmp(100,1.5,2.8)","anaMissingMass>-1 && anaMissingMass<-0.7","");
+  TH1F* hPhy1500 = (TH1F*)hphy1500tmp->Clone();
+  hPhy1500->SetTitle("Physics Simulation, E=1500");
+
+
+  TH1F* hPhySum = (TH1F*)hPhy1000->Clone();
+  hPhySum->Scale(scaling[0]);
+  hPhySum->Add(hPhy1100, scaling[1]);
+  hPhySum->Add(hPhy1200, scaling[2]);
+  hPhySum->Add(hPhy1300, scaling[3]);
+  hPhySum->Add(hPhy1400, scaling[4]);
+  hPhySum->Add(hPhy1500, scaling[5]);
+
+
+
+
+
+
+
+
+
+
+//  fileAcc->cd();
+//  analysis->Draw("simLightThetaLab>>hacctmp(100,1.5,2.8)","anaMissingMass>-1 && anaMissingMass<-0.7","");
+//  //analysis->Draw("simLightThetaLab>>hacctmp(200,1.60,3.1)","anaMissingMass>-1 && anaMissingMass<-0.7","");
+//  hacctmp->Draw();
+//  TH1F* hAcc = (TH1F*)hacctmp->Clone();
+//  hAcc->SetTitle("Acceptance Simulation");
+
+  fileFre1000->cd();
+  events->Draw("lightTheta>>hfre1000tmp(100,1.5,2.8)","missingMass>-1 && missingMass<-0.7","");
+  TH1F* hFre1000 = (TH1F*)hfre1000tmp->Clone();
+  hFre1000->SetTitle("Fresco, E = 1000 MeV");
+
+  fileFre1100->cd();
+  events->Draw("lightTheta>>hfre1100tmp(100,1.5,2.8)","missingMass>-1 && missingMass<-0.7","");
+  TH1F* hFre1100 = (TH1F*)hfre1100tmp->Clone();
+  hFre1100->SetTitle("Fresco, E = 1100 MeV");
+
+  fileFre1200->cd();
+  events->Draw("lightTheta>>hfre1200tmp(100,1.5,2.8)","missingMass>-1 && missingMass<-0.7","");
+  TH1F* hFre1200 = (TH1F*)hfre1200tmp->Clone();
+  hFre1200->SetTitle("Fresco, E = 1200 MeV");
+
+  fileFre1300->cd();
+  events->Draw("lightTheta>>hfre1300tmp(100,1.5,2.8)","missingMass>-1 && missingMass<-0.7","");
+  TH1F* hFre1300 = (TH1F*)hfre1300tmp->Clone();
+  hFre1300->SetTitle("Fresco, E = 1300 MeV");
+
+  fileFre1400->cd();
+  events->Draw("lightTheta>>hfre1400tmp(100,1.5,2.8)","missingMass>-1 && missingMass<-0.7","");
+  TH1F* hFre1400 = (TH1F*)hfre1400tmp->Clone();
+  hFre1400->SetTitle("Fresco, E = 1400 MeV");
+
+  fileFre1500->cd();
+  events->Draw("lightTheta>>hfre1500tmp(100,1.5,2.8)","missingMass>-1 && missingMass<-0.7","");
+  TH1F* hFre1500 = (TH1F*)hfre1500tmp->Clone();
+  hFre1500->SetTitle("Fresco, E = 1500 MeV");
+
+  TH1F* hFreSum = (TH1F*)hFre1000->Clone();
+  hFreSum->Scale(scaling[0]);
+  hFreSum->Add(hFre1100, scaling[1]);
+  hFreSum->Add(hFre1200, scaling[2]);
+  hFreSum->Add(hFre1300, scaling[3]);
+  hFreSum->Add(hFre1400, scaling[4]);
+  hFreSum->Add(hFre1500, scaling[5]);
+
+
+
+
+
+//  fileNor->cd();
+//  events->Draw("lightTheta>>hnortmp(100,1.5,2.8)","missingMass>-1 && missingMass<-0.7","");
+//  //events->Draw("lightTheta>>hnortmp(200,1.60,3.1)","missingMass>-1 && missingMass<-0.7","");
+//  hnortmp->Draw();
+//  TH1F* hNor = (TH1F*)hnortmp->Clone();
+
+//  hAcc->Divide(hNor); // normalization
+
+//  TH1F* hPhyCorr = (TH1F*)hPhy->Clone();
+//  hPhyCorr->Divide(hAcc);
+//  hPhyCorr->SetTitle("Acceptance Corrected");
+
+  TCanvas* can1 = new TCanvas("can1", "Simulations");
+  can1->Divide(3,2);
+  can1->cd(1);
+  hPhy1000->Draw();
+  can1->cd(2);
+  hPhy1100->Draw();
+  can1->cd(3);
+  hPhy1200->Draw();
+  can1->cd(4);
+  hPhy1300->Draw();
+  can1->cd(5);
+  hPhy1400->Draw();
+  can1->cd(6);
+  hPhy1500->Draw();
+
+  TCanvas* can2 = new TCanvas("can2", "Theory");
+  can2->Divide(3,2);
+  can2->cd(1);
+  hFre1000->Draw();
+  can2->cd(2);
+  hFre1100->Draw();
+  can2->cd(3);
+  hFre1200->Draw();
+  can2->cd(4);
+  hFre1300->Draw();
+  can2->cd(5);
+  hFre1400->Draw();
+  can2->cd(6);
+  hFre1500->Draw();
+  
+  TCanvas* can3 = new TCanvas("can3", "Combined");
+  can3->Divide(1,3);
+  can3->cd(1);
+  hBeamProfile->Draw();
+  can3->cd(2);
+  hPhySum->Draw();
+  can3->cd(3);
+  hFreSum->Draw();
+
+  
+}

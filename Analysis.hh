@@ -98,6 +98,8 @@ class Analysis
     Double_t miss;
     
     Double_t energyGamma;
+    Double_t energyGammaDC;
+    Int_t grapeDet;
     
     Bool_t cutExists[maxCutType][maxCuts];
     TCutG* cut[maxCutType][maxCuts];

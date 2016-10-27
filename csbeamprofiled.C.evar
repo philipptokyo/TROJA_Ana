@@ -1,0 +1,169 @@
+{
+  
+  char tmp1[200], tmp2[200];
+  //Int_t thBins=100;
+  //Float_t thMin=1.5, thMax=2.8;
+  Int_t thBins=200;
+  Float_t thMin=0.0, thMax=3.1;
+  // missing mass cut
+  //Float_t mmcMin=-0.2, mmcMax=0.2; // ground state (1)
+  Float_t mmcMin=-1.0, mmcMax=-0.7; // state 2
+  //Float_t mmcMin=-1.45, mmcMax=-1.0; // state 3
+  //Float_t mmcMin=-1.8, mmcMax=-1.45; // state 4
+  //Float_t mmcMin=-2.2, mmcMax=-1.8; // state 5
+  Float_t scaling[200]={1.0}; 
+  
+  TFile* fileFre;
+  TFile* filePhy;
+  TFile* fileAcc;
+  TFile* fileNor;
+  TH2F* h2FreCM;
+  TH2F* h2FreLab;
+  //TH2F* h2PhyCM;
+  TH2F* h2PhyLab;
+  //TH2F* h2NorCM;
+  TH2F* h2NorLab;
+  //TH2F* h2AccCM;
+  TH2F* h2AccLab;
+  TH2F* h2AccLabNor;
+  TH2F* h2PhyCMCorr; 
+  TH2F* h2PhyLabCorr;
+  
+  TH2F* h2LabE_CM_Mat; 
+  TH3F* h3LabE_CM_Mat; 
+  
+//  TH2F* h2Phy1 = new TH2F("h2Phy1", "Simulation", 22, 600.0, 2700.0, thBins, thMin, thMax);
+//  TH2F* h2Phy2 = new TH2F("h2Phy2", "Simulation, with beam profile", 21, 600.0, 2600.0, thBins, thMin, thMax);
+//  TH2F* h2PhyCorr1 = new TH2F("h2PhyCorr1", "Simulation, Acceptance corrected", 22, 600.0, 2700.0, thBins, thMin, thMax);
+//  TH2F* h2PhyCorr2 = new TH2F("h2PhyCorr2", "Simulation, Acceptance corrected, with beam profile", 21, 600.0, 2600.0, thBins, thMin, thMax);
+//  TH2F* h2Fre1 = new TH2F("h2Fre1", "Fresco", 22, 600.0, 2700.0, thBins, thMin, thMax);
+//  TH2F* h2Fre2 = new TH2F("h2Fre2", "Fresco, with beam profile", 21, 600.0, 2600.0, thBins, thMin, thMax);
+  
+  
+  // include the beam profile
+//  TFile* fileBeam = TFile::Open("/mnt/raid/OEDO/OEDO_Matsushita/132Sn/3rd_order/oedo_132sn_10MeV_short.root", "read");
+//  fileBeam->cd();
+//  events->Draw("energy>>beamProfiletmp(100,0,35)");
+//  TH1F* hBeamProfile = (TH1F*)beamProfiletmp->Clone();
+
+  
+  //scaling[f]=hBeamProfile->GetBinContent(b);
+//  scaling[f]=hBeamProfile->GetBinContent(b)/hBeamProfile->Integral();
+//  printf("Run %d, Beam energy %f, intensity %f\n", 600 + 100*f, e, scaling[f]);
+  
+
+  sprintf(tmp1, "/mnt/raid/OEDO/philipp/events/132Sn_evar_phy.root");
+  //printf("Opening file '%s'\n", tmp);
+  fileFre = TFile::Open(tmp1 , "read");
+  fileFre->cd();
+  h2FreCM = (TH2F*)fileFre->Get("histCScmFresco2d_02");
+
+  Int_t eBins = h2FreCM->GetYaxis()->GetNbins();
+  Float_t eMin, eMax;
+  eMin = h2FreCM->GetYaxis()->GetBinLowEdge(0);
+  eMax = h2FreCM->GetYaxis()->GetBinUpEdge(eBins);
+  printf("Found %d beam energy bins from %f to %f MeV\n", eBins, eMin, eMax);
+
+  thBins = h2FreCM->GetXaxis()->GetNbins();
+  thMin = h2FreCM->GetXaxis()->GetBinLowEdge(0);
+  thMax = h2FreCM->GetXaxis()->GetBinUpEdge(thBins);
+  printf("Found %d theta CM bins from %f to %f\n", thBins, thMin, thMax);
+  
+  
+  sprintf(tmp1, "beamEnergy*132.0:lightTheta>>hfretmp(%f, %f, %f, %f, %f, %f)", thBins, thMin, thMax, eBins, eMin, eMax);
+  sprintf(tmp2, "missingMass>%f && missingMass<%f", mmcMin, mmcMax);
+  events->Draw(tmp1, tmp2,"");
+  h2FreLab = (TH2F*)hfretmp->Clone();
+  h2FreLab->SetTitle( Form("Generated events, #vartheta_{lab}, E_{beam} vs. #vartheta_{lab}") );
+
+
+  
+  sprintf(tmp1, "/mnt/raid/OEDO/philipp/analysis/132Sn_evar_phy.root");
+  //printf("Opening file '%s'\n", tmp);
+  filePhy = TFile::Open(tmp1, "read");
+  filePhy->cd();
+  sprintf(tmp1, "genBeamEnergy*132.0:simLightThetaLab>>hphytmp(%f, %f, %f, %f, %f, %f)", thBins, thMin, thMax, eBins, eMin, eMax);
+  sprintf(tmp2, "anaMissingMass>%f && anaMissingMass<%f", mmcMin, mmcMax);
+  analysis->Draw(tmp1, tmp2,"");
+  h2PhyLab = (TH2F*)hphytmp->Clone();
+  h2PhyLabCorr = (TH2F*)hphytmp->Clone();
+  h2PhyLab->SetTitle( Form("Physics Simulation, E_{beam} vs. #vartheta_{lab}") );
+  h2PhyLabCorr->SetTitle( Form("Physics Simulation, Acceptance corrected, E_{beam} vs. #vartheta_{lab}") );
+  
+
+  sprintf(tmp1, "simLightThetaCM:genBeamEnergy:simLightThetaLab>>hmat(%f, %f, %f, %f, %f, %f, %f, %f, %f)", thBins, thMin, thMax, eBins, eMin, eMax, thBins, thMin, thMax);
+  sprintf(tmp2, "anaMissingMass>%f && anaMissingMass<%f", mmcMin, mmcMax);
+  analysis->Draw(tmp1, tmp2,"");
+  h3LabE_CM_Mat = (TH3F*)hmat->Clone();
+  h2LabE_CM_Mat = (TH2F*)h3LabE_CM_Mat->Project3D("yx");
+
+  sprintf(tmp1, "/mnt/raid/OEDO/philipp/events/132Sn_evar_acc.root");
+  //printf("Opening file '%s'\n", tmp);
+  fileNor = TFile::Open(tmp1 , "read");
+  fileNor->cd();
+  sprintf(tmp1, "beamEnergy*132.0:lightTheta>>hnortmp(%f, %f, %f, %f, %f, %f)", thBins, thMin, thMax, eBins, eMin, eMax);
+  sprintf(tmp2, "missingMass>%f && missingMass<%f", mmcMin, mmcMax);
+  events->Draw(tmp1, tmp2,"");
+  h2NorLab = (TH2F*)hnortmp->Clone();
+  h2NorLab->SetTitle( Form("Normalization, E_{beam} vs. #vartheta_{lab}") );
+
+  sprintf(tmp1, "/mnt/raid/OEDO/philipp/analysis/132Sn_evar_acc.root");
+  //printf("Opening file '%s'\n", tmp);
+  fileAcc = TFile::Open(tmp1 , "read");
+  fileAcc->cd();
+  sprintf(tmp1, "genBeamEnergy*132.0:simLightThetaLab>>hacctmp(%f, %f, %f, %f, %f, %f)", thBins, thMin, thMax, eBins, eMin, eMax);
+  sprintf(tmp2, "anaMissingMass>%f && anaMissingMass<%f", mmcMin, mmcMax);
+  analysis->Draw(tmp1, tmp2,"");
+  h2AccLab = (TH2F*)hacctmp->Clone();
+  h2AccLabNor = (TH2F*)hacctmp->Clone();
+  h2AccLab->SetTitle( Form("Acceptance (NOT normalized), E_{beam} vs. #vartheta_{lab}") );
+  h2AccLabNor->SetTitle( Form("Acceptance (normalized), E_{beam} vs. #vartheta_{lab}") );
+
+  h2AccLabNor->Divide(h2NorLab);
+  
+  
+  // acceptance correction of physics data 
+  h2PhyLabCorr->Divide(h2AccLabNor);
+
+  h2PhyCMCorr = (TH2F*)h2PhyLabCorr->Clone(0); // to get the same binning
+
+  // convert to CM with the obtained 3d matrix
+  for(Int_t t=0; t<thBins; t++){
+  for(Int_t e=0; e<eBins; e++){
+    Float_t cs = h2PhyLabCorr->GetBinContent(t,e);
+    Float_t thcm = h2LabE_CM_Mat->GetBinContent(t,e);
+
+    Int_t bcm = h2PhyCMCorr->GetXaxis()->FindBin(thcm);
+    //h2PhyCMCorr->SetBinContent(bcm, e, cs);
+    h2PhyCMCorr->Fill(bcm, e, cs); // increment by cs
+  }
+  }
+
+  sprintf(tmp1,"colz");
+
+  TCanvas* can3 = new TCanvas("can3", "Analysis, CM");
+  can3->Divide(3,1);
+  can3->cd(1);
+  h2FreCM->Draw(tmp1);
+  can3->cd(2);
+  h2LabE_CM_Mat->Draw(tmp1);
+  can3->cd(3);
+  h2PhyCMCorr->Draw(tmp1);
+
+  TCanvas* can4 = new TCanvas("can4", "Sim, Lab");
+  can4->Divide(3,2);
+  can4->cd(1);
+  h2FreLab->Draw(tmp1);
+  can4->cd(2);
+  h2PhyLab->Draw(tmp1);
+  can4->cd(3);
+  h2PhyLabCorr->Draw(tmp1);
+  
+  can4->cd(4);
+  h2NorLab->Draw(tmp1);
+  can4->cd(5);
+  h2AccLab->Draw(tmp1);
+  can4->cd(6);
+  h2AccLabNor->Draw(tmp1);
+
+}

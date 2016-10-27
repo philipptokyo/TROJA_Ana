@@ -68,8 +68,12 @@ typedef struct _dat
   Double_t hitPositionY[maxDetectors]; // x, y, z in cartesian coordinates, origin: center of target
   Double_t hitPositionZ[maxDetectors]; // x, y, z in cartesian coordinates, origin: center of target
   
-  
-  Double_t grapeEnergy;
+  Int_t grapeDetMul, grapeCryMul[grapeMaxDet], grapeSegMul[grapeMaxDet][grapeMaxCry];  
+  //Int_t grapeDetHasHit[[grapeMaxDet],  grapeCryHasHit
+  Double_t grapeDetEnergy[grapeMaxDet], grapeCryEnergy[grapeMaxDet][grapeMaxCry], grapeSegEnergy[grapeMaxDet][grapeMaxCry][grapeMaxSeg];
+  //Int_t grapeDet;
+  //Int_t grapeCrystal;
+  //Int_t grapeSegment;
 
 } dat;
 
@@ -137,6 +141,8 @@ Double_t GetResPar(Int_t d, Int_t p) const { return detGeo[d].resPar[p] ;}
     TRotation GetInverseRotationMatrix(Int_t d);
 
     Bool_t IncludeGrape() {return fIncludeGrape;}
+    Int_t GetNumberOfGrapeDetectors() {return fNumberOfGrapeDetectors;}
+    Bool_t IncludeBeamPipe() {return fIncludeBeamPipe;}
 
     // setter
     
@@ -195,6 +201,9 @@ void SetResPar(Int_t d, Int_t p, Double_t v) { detGeo[d].resPar[p]=v ;}
     Int_t fNoOfDet; // number of detectors
 
     Bool_t fIncludeGrape;
+    Int_t fNumberOfGrapeDetectors;
+    
+    Bool_t fIncludeBeamPipe;
 
 
 };

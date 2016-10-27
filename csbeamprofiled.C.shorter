@@ -1,0 +1,52 @@
+{
+  
+  char tmp1[500], tmp2[500];
+  
+  // theta binning
+  //Int_t thBins=100;
+  //Float_t thMin=1.5, thMax=2.8;
+  Int_t thBins=200;
+  Float_t thMin=0.0, thMax=3.1;
+  
+  // missing mass cut
+  Float_t mmcMin=-0.2, mmcMax=0.2; // ground state (1)
+  //Float_t mmcMin=-1.0, mmcMax=-0.7; // state 2
+  //Float_t mmcMin=-1.45, mmcMax=-1.0; // state 3
+  //Float_t mmcMin=-1.8, mmcMax=-1.45; // state 4
+  //Float_t mmcMin=-2.2, mmcMax=-1.8; // state 5
+
+  TFile* fileFre[22];
+  TH1F* h1Fre[22];
+  TH2F* h2Fre = new TH2F("h2Fre", "Fresco", 22, 600.0, 2700.0, thBins, thMin, thMax);
+  
+  
+  
+  for(Int_t f=0; f<21; f++){
+
+    Float_t e = (600.0 + 100.0*f)/132.0;
+
+
+    sprintf(tmp1, "/mnt/raid/OEDO/philipp/events/132Sn_evar_%d.root", 600+100*f);
+    //printf("Opening file '%s'\n", tmp);
+    fileFre[f] = TFile::Open(tmp1, "read");
+    fileFre[f]->cd();
+    sprintf(tmp1, "lightTheta>>hfretmp(%f, %f, %f)", thBins, thMin, thMax);
+    sprintf(tmp2, "missingMass>%f && missingMass<%f", mmcMin, mmcMax);
+    events->Draw(tmp1, tmp2,"");
+    h1Fre[f] = (TH1F*)hfretmp->Clone();
+    h1Fre[f]->SetTitle( Form("Fresco, E = %d MeV", 600+100*f) );
+
+
+
+    for(Int_t b=0; b<thBins; b++){
+      h2Fre->SetBinContent(f, b, h1Fre[f]->GetBinContent(b));
+    }
+
+  }
+
+
+
+  TCanvas* can4 = new TCanvas("can4", "Combined, 3D");
+  h2Fre->Draw("surf");
+  
+}
