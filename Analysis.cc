@@ -24,6 +24,9 @@ Analysis::Analysis(InputInfo *i, DetectorInfo* d){
     cout << "Analysis: Error during initialization! aborting..." << endl;
     abort();
   }
+
+  fEnLoss = new EnLoss();
+  fEnLoss->CollectData("EnLossData/enLoss_tables_p_in_CD2.csv", 0);
 }
 
 Analysis::~Analysis(){
@@ -702,6 +705,9 @@ void Analysis::MissingMass(Int_t channel){
   //  energyKinLight+=0.14;
   //}
   //energyKinLight+=0.45;
+
+  Double_t enloca=fEnLoss->CalcEnLoss(energyKinLight, (detInfo->GetTargetSize(2)*1000.0/2.0)/TMath::Abs(TMath::Cos(vLight.Theta())), 0);
+  energyKinLight+=enloca;
 
   TLorentzVector lLight(vLight, energyTotLight*1000.0);
   if(lLight.Mag()>0){

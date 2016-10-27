@@ -1,6 +1,9 @@
 #include "EnLoss.hh"
 
 
+EnLoss::EnLoss(){
+
+}
 
 EnLoss::EnLoss(InputInfo *i, DetectorInfo* d){
 
@@ -117,28 +120,30 @@ Double_t EnLoss::CalcEnLoss(Double_t en, Double_t dist, Int_t index){
   
 
   //determine energy bin
-  if(en>fEnLoss[index].e[fEnLoss[index].ebins]){
-    printf("paricle energy above value given in list - extrapolating... (todo)\n");
-  }
-  
   Int_t ebin=0;
-  for(Int_t eb=0; eb<fEnLoss[index].ebins-1; eb++){
-    if((en>fEnLoss[index].e[eb]) && (en<fEnLoss[index].e[eb+1] )){
-      ebin = eb;
-      break;
+  if(en>fEnLoss[index].e[fEnLoss[index].ebins-1]){
+    //printf("paricle energy %f MeV above maximum given value in list (%f) - extrapolating... (todo)\n", en, fEnLoss[index].e[fEnLoss[index].ebins-1]);
+    ebin=fEnLoss[index].ebins-2;
+  }else{
+    for(Int_t eb=0; eb<fEnLoss[index].ebins-1; eb++){
+      if((en>fEnLoss[index].e[eb]) && (en<fEnLoss[index].e[eb+1] )){
+        ebin = eb;
+        break;
+      }
     }
   }
   
   //determine x bin
-  if(dist>fEnLoss[index].x[fEnLoss[index].xbins]){
-    printf("dX above maximum value given in list - extrapolating... (todo)\n");
-  }
-  
   Int_t xbin=0;
-  for(Int_t xb=0; xb<fEnLoss[index].xbins-1; xb++){
-    if((dist>fEnLoss[index].x[xb]) && (dist<fEnLoss[index].x[xb+1] )){
-      xbin = xb;
-      break;
+  if(dist>fEnLoss[index].x[fEnLoss[index].xbins-1]){
+    //printf("dX %f micron above maximum value given in list (%f) - extrapolating... (todo)\n", dist, fEnLoss[index].x[fEnLoss[index].xbins-1]);
+    xbin=fEnLoss[index].xbins-2;
+  }else{
+    for(Int_t xb=0; xb<fEnLoss[index].xbins-1; xb++){
+      if((dist>fEnLoss[index].x[xb]) && (dist<fEnLoss[index].x[xb+1] )){
+        xbin = xb;
+        break;
+      }
     }
   }
 

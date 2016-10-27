@@ -8,6 +8,7 @@
 
 #include "Nucleus.hh"
 #include "Kinematics.hh"
+#include "EnLoss.hh"
 
 // maxCutType defined in InputInfo.hh
 #define maxCuts 10 // per cut file 
@@ -36,6 +37,8 @@ class Analysis
     
     InputInfo* info;
     DetectorInfo* detInfo;
+
+    EnLoss* fEnLoss;
 
     TFile* fileBeam;
     TFile* infile;

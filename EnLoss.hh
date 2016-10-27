@@ -29,6 +29,7 @@ class EnLoss
   
   public:
 
+    EnLoss();
     EnLoss(InputInfo *i, DetectorInfo* d);
     ~EnLoss();
 
