@@ -35,15 +35,20 @@ class EnLoss
 
     void CollectData(string filename, Int_t index);
     Double_t CalcEnLoss(Double_t en, Double_t dist, Int_t index);
+    Double_t CalcEnLoss(Double_t en, Double_t dist, Int_t index, Bool_t warnings);
 
+    Double_t CalcParticleEnergy(Double_t en, Double_t dist, Int_t index);
 
 
   private:
     
+    void InvertData(Int_t index, Double_t prec);
+
     InputInfo* fInfo;
     DetectorInfo* fDetInfo;
 
     dEdX fEnLoss[1];
+    dEdX fEnLossInv[1];
 
 
 };

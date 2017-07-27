@@ -26,7 +26,7 @@ Analysis::Analysis(InputInfo *i, DetectorInfo* d){
   }
 
   fEnLoss = new EnLoss();
-  fEnLoss->CollectData("EnLossData/enLoss_tables_p_in_CD2.csv", 0);
+  fEnLoss->CollectData("/home/philipp/analysis/troja/EnLossData/enLoss_tables_p_in_CD2.csv", 0);
 }
 
 Analysis::~Analysis(){
@@ -95,10 +95,27 @@ void Analysis::ResetVariables(){
   thetaLightLab=0.0;
   thetaLightCM=0.0;
   phiLight=0.0;
-  miss=0.0;
+  miss=NAN;
 
-  energyGamma=0.0;
-  grapeDet=-1;
+  //energyGamma=0.0;
+  //grapeDet=-1;
+  
+  grapeDetMul=0;
+  grapeSumEnergyDC=0.0;
+  for(Int_t d=0; d<grapeMaxDet; d++){
+    grapeDetEnergy[d]=NAN;
+    grapeDetEnergyDC[d]=NAN;
+    grapeCryMul[d]=0;
+    for(Int_t c=0; c<grapeMaxCry; c++){
+      grapeCryEnergy[d][c]=NAN;
+      grapeCryEnergyDC[d][c]=NAN;
+      grapeSegMul[d][c]=0;
+      for(Int_t s=0; s<grapeMaxSeg; s++){
+        grapeSegEnergy[d][c][s]=NAN;
+        grapeSegEnergyDC[d][c][s]=NAN;
+      }
+    }
+  }
 
 
 
@@ -184,6 +201,10 @@ Bool_t Analysis::Init(){
   treeBeam->SetBranchAddress("beamPhi", &beamPhi);
   treeBeam->SetBranchAddress("state", &genState);
   treeBeam->SetBranchAddress("excitationEnergy", &genExcEn);
+  
+  treeBeam->SetBranchAddress("gammaMul", &genGammaMul);
+  treeBeam->SetBranchAddress("gammaERest", genGammaERest);
+  treeBeam->SetBranchAddress("gammaE", genGammaELab);
 
   tree->SetBranchAddress("eventNumber", &eventNumber);
   tree->SetBranchAddress("detHit", detHit);
@@ -196,8 +217,20 @@ Bool_t Analysis::Init(){
   tree->SetBranchAddress("FIz", &FIz);
   tree->SetBranchAddress("FIdetID", &FIdetID);
   
-  tree->SetBranchAddress("grapeEnergy", &energyGamma);
-  tree->SetBranchAddress("grapeDetector", &grapeDet);
+  //tree->SetBranchAddress("grapeEnergy", &energyGamma);
+  //tree->SetBranchAddress("grapeDetector", &grapeDet);
+  
+  tree->SetBranchAddress("targetEnergyLoss", &targetEnergyLoss);
+  
+  tree->SetBranchAddress("grapeDetMul", &grapeDetMul); // ID of the detector with the first interaction point
+
+  tree->SetBranchAddress("grapeCryMul", grapeCryMul); // ID of the detector with the first interaction point
+  tree->SetBranchAddress("grapeSegMul", grapeSegMul); // ID of the detector with the first interaction point
+
+  tree->SetBranchAddress("grapeDetEnergy", grapeDetEnergy); // ID of the detector with the first interaction point
+  tree->SetBranchAddress("grapeCryEnergy", grapeCryEnergy); // ID of the detector with the first interaction point
+  tree->SetBranchAddress("grapeSegEnergy", grapeSegEnergy); // ID of the detector with the first interaction point
+
 
 
   fileAnalysis = new TFile(info->fOutFileNameAnalysis, "recreate");
@@ -224,8 +257,8 @@ Bool_t Analysis::Init(){
   //treeAnalysis1->Branch("simLightThetaLab", &thetaLightLab, "simLightThetaLab/D");
   treeAnalysis1->Branch("anaFIdetID", &firstDetID, "anaFIdetID/I");
   
-  treeAnalysis1->Branch("energyGamma", &energyGamma, "energyGamma/D");
-  treeAnalysis1->Branch("energyGammaDC", &energyGammaDC, "energyGammaDC/D");
+  //treeAnalysis1->Branch("energyGamma", &energyGamma, "energyGamma/D");
+  //treeAnalysis1->Branch("energyGammaDC", &energyGammaDC, "energyGammaDC/D");
 
 
 
@@ -251,6 +284,12 @@ Bool_t Analysis::Init(){
     treeAnalysis2[f]->Branch("genExcEn", &genExcEn, "genExcEn/F");
     treeAnalysis2[f]->Branch("genState", &genState, "genState/I");
 
+    treeAnalysis2[f]->Branch("genGammaMul", &genGammaMul, "genGammaMul/I");
+    sprintf(tmpName, "genGammaERest[%d]/F", maxGammaMulGen);
+    treeAnalysis2[f]->Branch("genGammaERest", genGammaERest, tmpName);
+    sprintf(tmpName, "genGammaELab[%d]/F", maxGammaMulGen);
+    treeAnalysis2[f]->Branch("genGammaELab", genGammaELab, tmpName);
+    
     // write simulated data to tree
     // these values are with resolutions!!!!!!!!!!!!!
     sprintf(tmpName, "detectorEnergy[%d]/D", maxDetectors);
@@ -264,6 +303,8 @@ Bool_t Analysis::Init(){
 
 
     treeAnalysis2[f]->Branch("simLightKinEnergy", &energyKinLight, "simLightEnergy/D"); // sum of detector energy losses
+    treeAnalysis2[f]->Branch("simLightKinEnergyUncorr", &energyKinLightUncorr, "simLightEnergyUncorr/D"); // sum of detector energy losses
+    treeAnalysis2[f]->Branch("simTargetEnergyLoss", &targetEnergyLoss, "simTargetEnergyLoss/D"); // sum of detector energy losses
 
     treeAnalysis2[f]->Branch("simFIx", &FIx, "simFIx/D");
     treeAnalysis2[f]->Branch("simFIy", &FIy, "simFIy/D");
@@ -272,7 +313,7 @@ Bool_t Analysis::Init(){
     treeAnalysis2[f]->Branch("anaFIdetID", &firstDetID, "anaFIdetID/I");
 
     treeAnalysis2[f]->Branch("simLightThetaLab", &thetaLightLab, "simLightThetaLab/D");
-    treeAnalysis2[f]->Branch("simLightThetaCM", &thetaLightCM, "simLightThetaCM/D");                           // !!!!!!!!!!!!!!!!!!!!!!!!!!!!! needs bug fixing !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    treeAnalysis2[f]->Branch("simLightThetaCM", &thetaLightCM, "simLightThetaCM/D");     
     treeAnalysis2[f]->Branch("simLightPhi", &phiLight, "simLightPhi/D");
 
 
@@ -295,8 +336,31 @@ Bool_t Analysis::Init(){
     //treeAnalysis2[f]->Branch("anaHeavyTotalEnergy", &energyTotHeavy, "anaHeavyTotalEnergy/F");
     //treeAnalysis2[f]->Branch("anaHeavyMomentum", &momentumHeavy, "anaHeavyMomentum/F");
     
-    treeAnalysis2[f]->Branch("energyGamma", &energyGamma, "energyGamma/D");
-    treeAnalysis2[f]->Branch("energyGammaDC", &energyGammaDC, "energyGammaDC/D");
+    //treeAnalysis2[f]->Branch("energyGamma", &energyGamma, "energyGamma/D");
+    //treeAnalysis2[f]->Branch("energyGammaDC", &energyGammaDC, "energyGammaDC/D");
+    
+    treeAnalysis2[f]->Branch("grapeDetMul", &grapeDetMul, "grapeDetMul/I"); // ID of the detector with the first interaction point
+
+    sprintf(tmpName, "grapeCryMul[%d]/I", grapeMaxDet);
+    treeAnalysis2[f]->Branch("grapeCryMul", grapeCryMul, tmpName); // ID of the detector with the first interaction point
+    sprintf(tmpName, "grapeSegMul[%d][%d]/I", grapeMaxDet, grapeMaxCry);
+    treeAnalysis2[f]->Branch("grapeSegMul", grapeSegMul, tmpName); // ID of the detector with the first interaction point
+  
+    sprintf(tmpName, "grapeDetEnergy[%d]/D", grapeMaxDet);
+    treeAnalysis2[f]->Branch("grapeDetEnergy", grapeDetEnergy, tmpName); // ID of the detector with the first interaction point
+    sprintf(tmpName, "grapeCryEnergy[%d][%d]/D", grapeMaxDet, grapeMaxCry);
+    treeAnalysis2[f]->Branch("grapeCryEnergy", grapeCryEnergy, tmpName); // ID of the detector with the first interaction point
+    sprintf(tmpName, "grapeSegEnergy[%d][%d][%d]/D", grapeMaxDet, grapeMaxCry, grapeMaxSeg);
+    treeAnalysis2[f]->Branch("grapeSegEnergy", grapeSegEnergy, tmpName); // ID of the detector with the first interaction point
+  
+    treeAnalysis2[f]->Branch("grapeSumEnergyDC", &grapeSumEnergyDC, "grapeSumEnergyDC/D"); // ID of the detector with the first interaction point
+    sprintf(tmpName, "grapeDetEnergyDC[%d]/D", grapeMaxDet);
+    treeAnalysis2[f]->Branch("grapeDetEnergyDC", grapeDetEnergyDC, tmpName); // ID of the detector with the first interaction point
+    sprintf(tmpName, "grapeCryEnergyDC[%d][%d]/D", grapeMaxDet, grapeMaxCry);
+    treeAnalysis2[f]->Branch("grapeCryEnergyDC", grapeCryEnergyDC, tmpName); // ID of the detector with the first interaction point
+    sprintf(tmpName, "grapeSegEnergyDC[%d][%d][%d]/D", grapeMaxDet, grapeMaxCry, grapeMaxSeg);
+    treeAnalysis2[f]->Branch("grapeSegEnergyDC", grapeSegEnergyDC, tmpName); // ID of the detector with the first interaction point
+  
 
   } // treeAnalysis2
 
@@ -416,26 +480,45 @@ void Analysis::ProcessDetectorHits(){  // private
   //Int_t firstDetID = -1; // find out which detector fired first
   //Int_t seconDetID = -1; // find out which detector fired second 
 
-  // sum up all energy losses
+printf("ProcessDetectorHits\n");
+
+// sum up all energy losses
   for(Int_t d=0; d<maxDetectors; d++){
     detHitMul += detHit[d];
+printf("d %d, detHit[d] %d, detStripX[d] %d, detStripY[d] %d\n", d, detHit[d], detStripX[d], detStripY[d]);
     if(detHit[d]==1){
 
       energyKinLight+=detEnergyLoss[d];
 
-      // reconstruct position from strip number
-      detInfo->CalcHitPosition(d, detStripX[d], detStripY[d], recoPosX[d], recoPosY[d], recoPosZ[d]);
-
-      if(detInfo->IsInFront(d, firstDetID)){
-        firstDetID = d;
+      if(detInfo->IsPosDet(d)){
+printf("Detectr %d is pos det\n", d);
+        // reconstruct position from strip number
+        detInfo->CalcHitPosition(d, detStripX[d], detStripY[d], recoPosX[d], recoPosY[d], recoPosZ[d]);
+  
+        if(detInfo->IsInFront(d, firstDetID)){
+          firstDetID = d;
+        }
+        //else{
+        //  seconDetID = d;
+        //}
+  
       }
-      //else{
-      //  seconDetID = d;
-      //}
 
 
     }
   }
+
+
+  // if no position sensitive detector was hit, the event will be skipped
+  if(firstDetID<0){
+    detHitMul=0;
+  }
+
+
+//if(detHitMul>0){
+printf("used detector is %d, hitmul is %d\n", firstDetID, detHitMul);
+//}
+
 
   //simDetectorHitPos[0] = FIx;
   //simDetectorHitPos[1] = FIy;
@@ -443,6 +526,8 @@ void Analysis::ProcessDetectorHits(){  // private
   simDetectorHitPos[0] = recoPosX[firstDetID];
   simDetectorHitPos[1] = recoPosY[firstDetID];
   simDetectorHitPos[2] = recoPosZ[firstDetID];
+
+printf("position: %f %f %f\n", recoPosX[firstDetID], recoPosY[firstDetID], recoPosZ[firstDetID]);
 
 
 } // ProcessDetectorHits
@@ -570,10 +655,20 @@ void Analysis::Analysis2(){
     
     ProcessDetectorHits();
 
-    if(detHitMul==0){
-      continue;
+printf("after ProcessDetectorHits:\ndetHitMul %d\n", detHitMul);
+    if(detHitMul==0 && grapeDetMul==0){
+      continue; // no hits in silicons and no hits in Gamma Det
     }
-    else if(detHitMul>2){
+
+//printf("\n\nEvent %d\n", e);
+//printf("detHitMul %d, grapeDetMul %d\n", detHitMul, grapeDetMul);
+
+    if(grapeDetMul>0){
+      AnalysisGamma();
+      //printf("grapeSumEnergyDC %f\n", grapeSumEnergyDC);
+    }
+
+    if(detHitMul>2){
       //printf("Warning: more than 2 detectors fired in event %d! Such events are not handled properly!\n", e);
       detHitMul3++;
 
@@ -601,17 +696,27 @@ void Analysis::Analysis2(){
       }
     }
     
-    
+    // do the actual missing mass analysis
     for(Int_t f=0; f<maxCutType; f++){
       if(doAnalysisType[f]){
         MissingMass(f);
+        //printf("missing mass in loop %f\n", miss);
         if(type!=warningType){
           goodEvents++;
         }
       }
+      
+      
+      if(doAnalysisType[f] && grapeDetMul>0){
+        //printf("missing mass %f, grape sum %f\n", miss, grapeSumEnergyDC);
+      }
+      
+      
+      if(doAnalysisType[f] || grapeDetMul>0){
+        treeAnalysis2[f]->Fill();
+      }
     }
 
-    
   
   } // event loop
 
@@ -689,6 +794,8 @@ void Analysis::MissingMass(Int_t channel){
 
   TVector3 vLight(simDetectorHitPos[0]-beamX, simDetectorHitPos[1]-beamY, simDetectorHitPos[2]-beamZ); // take beam position into account
   
+printf("missing mass\nposition: %f %f %f\n\n", simDetectorHitPos[0], simDetectorHitPos[1], simDetectorHitPos[2]);
+
   vLight.RotateY(-beamA/1000.0);
   vLight.RotateX(-beamB/1000.0);
   
@@ -696,27 +803,27 @@ void Analysis::MissingMass(Int_t channel){
 
   //vLight.SetMagThetaPhi(momentumLight, theta, phi); // without beam position spread
 
-
-  // energy loss in target, correction
-  // roughly
-  //if(vLight.Theta()<(110.0*TMath::Pi()/180.0)){
-  //  energyKinLight+=0.14;
-  //}else{
-  //  energyKinLight+=0.14;
-  //}
-  //energyKinLight+=0.45;
-
-  Double_t enloca=fEnLoss->CalcEnLoss(energyKinLight, (detInfo->GetTargetSize(2)*1000.0/2.0)/TMath::Abs(TMath::Cos(vLight.Theta())), 0);
-  energyKinLight+=enloca;
-
-  TLorentzVector lLight(vLight, energyTotLight*1000.0);
-  if(lLight.Mag()>0){
-    lLight.SetRho( TMath::Sqrt( (energyKinLight+massLight)*(energyKinLight+massLight) - massLight*massLight )*1000 );
-  }
-
   // for the root tree
   thetaLightLab = vLight.Theta(); 
   phiLight = vLight.Phi(); 
+
+
+  // energy loss in target, correction
+  energyKinLightUncorr=energyKinLight;
+  
+  //Double_t enloca=fEnLoss->CalcEnLoss(energyKinLight, (detInfo->GetTargetSize(2)*1000.0/2.0)/TMath::Abs(TMath::Cos(vLight.Theta())), 0);
+  //energyKinLight+=enloca;
+  
+  energyKinLight=fEnLoss->CalcParticleEnergy(energyKinLightUncorr, (detInfo->GetTargetSize(2)*1000.0/2.0)/TMath::Abs(TMath::Cos(vLight.Theta())), 0);
+
+  //energyKinLight = energyKinLightUncorr+targetEnergyLoss; // hack for testing the code
+  
+
+  TLorentzVector lLight(vLight, energyTotLight*1000.0);
+  //printf("lLight.Mag() %f, ", lLight.Mag());
+  if(lLight.Mag()>0){
+    lLight.SetRho( TMath::Sqrt( (energyKinLight+massLight)*(energyKinLight+massLight) - massLight*massLight )*1000 ); // keV
+  }
 
   //Kinematics* kine = new Kinematics(nucProj, nucTarg, energyKinProj);
   Kinematics* kine = new Kinematics(nucProj, nucTarg, nucReco[channel], nucEjec[channel], energyKinProj, 0.0);
@@ -726,10 +833,11 @@ void Analysis::MissingMass(Int_t channel){
   //kine->SetAngles(thetaLightLab, 2, 0);
   kine->Final(thetaLightLab, 2);
   
-  miss = -kine->GetExcEnergy(lLight)/1000.0;
-  
-  thetaLightCM = -kine->GetThetacm(2) + TMath::Pi();
+  miss = -kine->GetExcEnergy(lLight)/1000.0; // MeV
 
+  thetaLightCM = -kine->GetThetacm(2) + TMath::Pi();
+  
+  //printf("reco theta lab %f, kin en %f, missing mass %f\n", thetaLightLab, energyKinLight, miss);
 
   hThetaLab->Fill(thetaLightLab*180.0/TMath::Pi());
   hThetaCM->Fill(thetaLightCM*180.0/TMath::Pi());
@@ -752,34 +860,9 @@ void Analysis::MissingMass(Int_t channel){
   
 
   
-  // Doppler correction
-  if(grapeDet>-1){
-    Float_t projGamma = (energyKinProj / massProj) + 1.0;
-    Float_t projBeta = TMath::Sqrt(1.0 - 1.0/(projGamma*projGamma));
-
-    Float_t th=0.0;
-    if(grapeDet<6) th=70.0;
-    if(grapeDet>5 && grapeDet<12) th=90.0;
-    if(grapeDet>11) th=110.0;
-
-    energyGammaDC = energyGamma * projGamma * (1.0 - (projBeta * TMath::Cos((th/180.0)*TMath::Pi())));
-
-
-
-  }else{
-    energyGammaDC=NAN;
-  }
-
-
-
-
-
-
-
 
   energyKinProj/=(Float_t)projA; // AMeV
 
-  treeAnalysis2[channel]->Fill();
 
   delete kine;
 
@@ -790,7 +873,60 @@ void Analysis::MissingMass(Int_t channel){
 
 
 
+void Analysis::AnalysisGamma(){
+  
+  treeAnaHeader[0]->GetEvent(0); // only projectile information used; is same for all channels
+  
+  // Doppler correction
+    
+  energyKinProj*=(Float_t)projA; 
+  
+  Double_t projGamma = (energyKinProj / massProj) + 1.0;
+  Double_t projBeta = TMath::Sqrt(1.0 - 1.0/(projGamma*projGamma));
 
+  Double_t grapeTheta[grapeMaxDet]={
+                                    125.0, 125.0, 125.0, 125.0, 125.0, 125.0,
+                                     90.0,  90.0,  90.0,  90.0,  90.0,  90.0, 
+                                     55.0,  55.0,  55.0,  55.0,  55.0,  55.0 
+                                    };
+  Double_t df = 0.0;
+  //todo: get theta of detector from header, or the GeConfig.txt
+
+  ////proposal:
+  //if(grapeDet<6) th=70.0;
+  //if(grapeDet>5 && grapeDet<12) th=90.0;
+  //if(grapeDet>11) th=110.0;
+  
+  //// Ota-san's code:
+  //if(grapeDet<6) th=55.0;
+  //if(grapeDet>5 && grapeDet<12) th=90.0;
+  //if(grapeDet>11) th=125.0;
+
+  //energyGammaDC = energyGamma * projGamma * (1.0 - (projBeta * TMath::Cos((th/180.0)*TMath::Pi())));
+  
+  for(Int_t d=0; d<grapeMaxDet; d++){
+    df = projGamma * (1.0 - (projBeta * TMath::Cos((grapeTheta[d]/180.0)*TMath::Pi())));
+    grapeDetEnergyDC[d] = grapeDetEnergy[d] * df;
+
+    if(grapeDetEnergyDC[d]>0.0){
+      grapeSumEnergyDC += grapeDetEnergyDC[d];
+    }
+
+    //if(!TMath::IsNaN(grapeDetEnergyDC[d])){
+    //  printf("Proj kin En %f, mass %f, gamma %f, proj beta %f, Gamma E %f, df %f, gamma E dc %f\n", energyKinProj, massProj, projGamma, projBeta, grapeDetEnergy[d], df, grapeDetEnergyDC[d]);
+    //  printf("Det %d, theta %f Gamma E %f, df %f, gamma E dc %f\n", d, grapeTheta[d], grapeDetEnergy[d], df, grapeDetEnergyDC[d]);
+    //}
+    for(Int_t c=0; c<grapeMaxCry; c++){
+      grapeCryEnergyDC[d][c] = grapeCryEnergy[d][c] * df;
+      for(Int_t s=0; s<grapeMaxSeg; s++){
+        grapeSegEnergyDC[d][c][s] = grapeSegEnergy[d][c][s] * df;
+      }
+    }
+  }
+  
+  energyKinProj/=(Float_t)projA; 
+
+} // AnalysisGamma
 
 
 

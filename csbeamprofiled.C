@@ -339,7 +339,7 @@
   for(Int_t b=0; b<h1cslab_pr->GetXaxis()->GetNbins(); b++){
     Double_t cont=h1cslab_pr->GetBinContent(b);
     Double_t angl=h1cslab_pr->GetXaxis()->GetBinCenter(b)/180.0*TMath::Pi();
-    cont/=TMath::Sin(angl);
+    //cont/=TMath::Sin(angl);
 
     h1cslab_pr->SetBinContent(b, cont);
   }
@@ -480,12 +480,12 @@ p[7]                        =   0.00852544;
   //gPad->SetLogy();
 
   can7->cd();
-  graflab[0]->Draw("Csame");
-  //graflab[1]->Draw("Csame");
-  //graflab[2]->Draw("Csame");
-  graflab[3]->Draw("Csame");
-  //graflab[4]->Draw("Csame");
-  //graflab[5]->Draw("Csame");
+//  graflab[0]->Draw("Csame");
+//  //graflab[1]->Draw("Csame");
+//  //graflab[2]->Draw("Csame");
+//  graflab[3]->Draw("Csame");
+//  //graflab[4]->Draw("Csame");
+//  //graflab[5]->Draw("Csame");
 
 
 

@@ -12,6 +12,7 @@
 
 // maxCutType defined in InputInfo.hh
 #define maxCuts 10 // per cut file 
+#define maxGammaMulGen 2
 
 class Analysis
 {
@@ -25,6 +26,7 @@ class Analysis
     Bool_t GetCuts();
     void Analysis2();
     void MissingMass(Int_t channel);
+    void AnalysisGamma();
 
     Analysis(InputInfo *i, DetectorInfo* d);
     
@@ -94,15 +96,39 @@ class Analysis
     Double_t gammaProj, gammaLight;
     Double_t energyTotProj, energyTotLight;
     //  Double_t energyKinHeavy=0.0, energyTotHeavy=0.0, gammaHeavy=0.0, momentumHeavy=0.0;
-    Double_t energyKinLight; // is sum of all energy losses
+    Double_t energyKinLight, energyKinLightUncorr; // is sum of all energy losses
     Double_t momentumProj, momentumLight;
     Double_t simDetectorHitPos[3]; // x, y, z; position used for analysis
     Double_t thetaLightLab, thetaLightCM, phiLight;
     Double_t miss;
     
-    Double_t energyGamma;
-    Double_t energyGammaDC;
-    Int_t grapeDet;
+    //Double_t energyGamma;
+    //Double_t energyGammaDC;
+    //Int_t grapeDet;
+
+    Double_t targetEnergyLoss;
+    
+    Int_t genGammaMul;
+    Float_t genGammaERest[maxGammaMulGen], genGammaELab[maxGammaMulGen];
+
+    Int_t grapeDetMul;
+    Int_t grapeCryMul[grapeMaxDet];
+    Int_t grapeSegMul[grapeMaxDet][grapeMaxCry];
+    
+    Double_t grapeDetEnergy[grapeMaxDet];
+    Double_t grapeCryEnergy[grapeMaxDet][grapeMaxCry];
+    Double_t grapeSegEnergy[grapeMaxDet][grapeMaxCry][grapeMaxSeg];
+    
+    Double_t grapeSumEnergyDC;
+    Double_t grapeDetEnergyDC[grapeMaxDet];
+    Double_t grapeCryEnergyDC[grapeMaxDet][grapeMaxCry];
+    Double_t grapeSegEnergyDC[grapeMaxDet][grapeMaxCry][grapeMaxSeg];
+
+
+
+
+
+
     
     Bool_t cutExists[maxCutType][maxCuts];
     TCutG* cut[maxCutType][maxCuts];

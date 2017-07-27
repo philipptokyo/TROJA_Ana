@@ -97,7 +97,6 @@ Int_t main(Int_t argc, char **argv){
   Analysis* ana = new Analysis(info, detInfo);
   cout << endl;
   
-
  
   
   Bool_t haveCuts = ana->GetCuts();

@@ -111,18 +111,91 @@ void EnLoss::CollectData(string filename, Int_t index){
   } // end of while loop
 
   
-  printf("EnLoss::CollectData finished\n");
+  printf("EnLoss::CollectData finished! Inverting matrix...\n");
+  InvertData(index, 0.001);
+  printf("... finished inverting matrix!\n");
 
 }
 
 
-Double_t EnLoss::CalcEnLoss(Double_t en, Double_t dist, Int_t index){
+
+
+
+
+
+
+void EnLoss::InvertData(Int_t index, Double_t prec=0.001){
   
+  // copy energy and thickness binnings:
+  fEnLossInv[index].ebins=fEnLoss[index].ebins;
+  fEnLossInv[index].xbins=fEnLoss[index].xbins;
+
+  for(Int_t eb=0; eb<fEnLoss[index].ebins; eb++){
+    fEnLossInv[index].e[eb] = fEnLoss[index].e[eb];
+    
+    printf("Det energy %f MeV (thickness[micron] / particle energy[MeV]): \n", fEnLossInv[index].e[eb]);
+    
+    for(Int_t xb=0; xb<fEnLoss[index].xbins; xb++){
+      fEnLossInv[index].x[xb] = fEnLoss[index].x[xb];
+
+      Double_t eninv=fEnLossInv[index].e[eb];
+
+      Int_t counter=0;
+      
+      //printf("  Start iterating: eninv %f, in thickness %f, EnLoss %f\n", eninv, fEnLossInv[index].x[xb], CalcEnLoss(eninv, fEnLossInv[index].x[xb], index, false));
+      while( (eninv-CalcEnLoss(eninv, fEnLossInv[index].x[xb], index, false)) < fEnLossInv[index].e[eb] ){
+        
+        //eninv += CalcEnLoss(eninv, fEnLossInv[index].x[xb], index);
+        eninv += prec; 
+      
+        //printf("    iterating: eninv %f, EnLoss %f\n", eninv, CalcEnLoss(eninv, fEnLossInv[index].x[xb], index));
+        
+        counter++;
+        if(counter>(Int_t)(10000.0/prec)){
+          printf("Error while creating InvertData (EnLoss.cc): more than %d iterations for energy %f and thickness %f! Aborting...\n", (Int_t)(10000.0/prec), fEnLossInv[index].e[eb], fEnLossInv[index].x[xb]);
+          abort();
+        }
+
+      }
+
+
+      fEnLossInv[index].enLoss[eb][xb] = eninv;
+
+      printf("%3.1f / %2.3f,  ", fEnLossInv[index].x[xb], fEnLossInv[index].enLoss[eb][xb]);
+
+    }
+
+    printf("\n");
+
+  }
+
+    
+
+}
+
+
+
+
+
+Double_t EnLoss::CalcEnLoss(Double_t en, Double_t dist, Int_t index){
+  return CalcEnLoss(en, dist, index, true);
+}
+
+
+Double_t EnLoss::CalcEnLoss(Double_t en, Double_t dist, Int_t index, Bool_t warnings=true){
+  
+  en-=0.000001;
+  dist-=0.000001;
+
+  //printf("Calc En Loss for en %f, dist %f\n", en, dist);
+  //printf("x[xbins-1] %f, e[ebins-1] %f\n", fEnLoss[index].x[fEnLoss[index].xbins-1], fEnLoss[index].e[fEnLoss[index].ebins-1]);
 
   //determine energy bin
   Int_t ebin=0;
   if(en>fEnLoss[index].e[fEnLoss[index].ebins-1]){
-    //printf("paricle energy %f MeV above maximum given value in list (%f) - extrapolating... (todo)\n", en, fEnLoss[index].e[fEnLoss[index].ebins-1]);
+    if(warnings){
+      printf("paricle energy %f MeV above maximum given value in list (%f) - extrapolating from bins %d (at %f mu) and %d (at %f mu) \n", en, fEnLoss[index].e[fEnLoss[index].ebins-1], fEnLoss[index].ebins-2, fEnLoss[index].e[fEnLoss[index].ebins-2], fEnLoss[index].ebins-1, fEnLoss[index].e[fEnLoss[index].ebins-1]);
+    }
     ebin=fEnLoss[index].ebins-2;
   }else{
     for(Int_t eb=0; eb<fEnLoss[index].ebins-1; eb++){
@@ -136,7 +209,9 @@ Double_t EnLoss::CalcEnLoss(Double_t en, Double_t dist, Int_t index){
   //determine x bin
   Int_t xbin=0;
   if(dist>fEnLoss[index].x[fEnLoss[index].xbins-1]){
-    //printf("dX %f micron above maximum value given in list (%f) - extrapolating... (todo)\n", dist, fEnLoss[index].x[fEnLoss[index].xbins-1]);
+    if(warnings){
+      printf("dX %f micron above maximum value given in list (%f) - extrapolating from bins %d (at %f mu) and %d (at %f mu) \n", dist, fEnLoss[index].x[fEnLoss[index].xbins-1], fEnLoss[index].xbins-2, fEnLoss[index].x[fEnLoss[index].xbins-2], fEnLoss[index].xbins-1, fEnLoss[index].x[fEnLoss[index].xbins-1]);
+    }
     xbin=fEnLoss[index].xbins-2;
   }else{
     for(Int_t xb=0; xb<fEnLoss[index].xbins-1; xb++){
@@ -146,15 +221,21 @@ Double_t EnLoss::CalcEnLoss(Double_t en, Double_t dist, Int_t index){
       }
     }
   }
+  
+  //printf("using xbin %d, ebin %d\n", xbin, ebin);
 
   //interpolating at xbin and xbin+1
   TGraph *gx1 = new TGraph();
   gx1->SetPoint(0, fEnLoss[index].e[ebin], fEnLoss[index].enLoss[ebin][xbin]);
   gx1->SetPoint(1, fEnLoss[index].e[ebin+1], fEnLoss[index].enLoss[ebin+1][xbin]);
+  
+  //printf("Graph 1: e %f %f, dE %f %f\n", fEnLoss[index].e[ebin], fEnLoss[index].e[ebin+1], fEnLoss[index].enLoss[ebin][xbin], fEnLoss[index].enLoss[ebin+1][xbin]);
 
   TGraph *gx2 = new TGraph();
   gx2->SetPoint(0, fEnLoss[index].e[ebin], fEnLoss[index].enLoss[ebin][xbin+1]);
   gx2->SetPoint(1, fEnLoss[index].e[ebin+1], fEnLoss[index].enLoss[ebin+1][xbin+1]);
+
+  //printf("Graph 2: e %f %f, dE %f %f\n", fEnLoss[index].e[ebin], fEnLoss[index].e[ebin+1], fEnLoss[index].enLoss[ebin][xbin+1], fEnLoss[index].enLoss[ebin+1][xbin+1]);
 
   Double_t dE1=gx1->Eval(en);
   Double_t dE2=gx2->Eval(en);
@@ -163,7 +244,84 @@ Double_t EnLoss::CalcEnLoss(Double_t en, Double_t dist, Int_t index){
   gem->SetPoint(0, fEnLoss[index].x[xbin], dE1);
   gem->SetPoint(1, fEnLoss[index].x[xbin+1], dE2);
   
+  //printf("Graph M: x %f %f, dE %f %f\n", fEnLoss[index].x[xbin], fEnLoss[index].x[xbin+1], dE1, dE2);
+
   Double_t enloca = gem->Eval(dist);
-  
+ 
+  //printf("Resulting En Loss is %f\n", enloca);
+
   return enloca;
 }
+
+
+
+
+
+
+Double_t EnLoss::CalcParticleEnergy(Double_t en, Double_t dist, Int_t index){
+  
+  en-=0.000001;
+  dist-=0.000001;
+
+  //printf("Calc En Loss for en %f, dist %f\n", en, dist);
+  //printf("x[xbins-1] %f, e[ebins-1] %f\n", fEnLoss[index].x[fEnLoss[index].xbins-1], fEnLoss[index].e[fEnLoss[index].ebins-1]);
+
+  //determine energy bin
+  Int_t ebin=0;
+  if(en>fEnLossInv[index].e[fEnLossInv[index].ebins-1]){
+    printf("paricle energy %f MeV above maximum given value in list (%f) - extrapolating from bins %d (at %f mu) and %d (at %f mu) \n", en, fEnLossInv[index].e[fEnLossInv[index].ebins-1], fEnLossInv[index].ebins-2, fEnLossInv[index].e[fEnLossInv[index].ebins-2], fEnLossInv[index].ebins-1, fEnLossInv[index].e[fEnLossInv[index].ebins-1]);
+    ebin=fEnLossInv[index].ebins-2;
+  }else{
+    for(Int_t eb=0; eb<fEnLossInv[index].ebins-1; eb++){
+      if((en>fEnLossInv[index].e[eb]) && (en<fEnLossInv[index].e[eb+1] )){
+        ebin = eb;
+        break;
+      }
+    }
+  }
+  
+  //determine x bin
+  Int_t xbin=0;
+  if(dist>fEnLossInv[index].x[fEnLossInv[index].xbins-1]){
+    printf("dX %f micron above maximum value given in list (%f) - extrapolating from bins %d (at %f mu) and %d (at %f mu) \n", dist, fEnLossInv[index].x[fEnLossInv[index].xbins-1], fEnLossInv[index].xbins-2, fEnLossInv[index].x[fEnLossInv[index].xbins-2], fEnLossInv[index].xbins-1, fEnLossInv[index].x[fEnLossInv[index].xbins-1]);
+    xbin=fEnLossInv[index].xbins-2;
+  }else{
+    for(Int_t xb=0; xb<fEnLossInv[index].xbins-1; xb++){
+      if((dist>fEnLossInv[index].x[xb]) && (dist<fEnLossInv[index].x[xb+1] )){
+        xbin = xb;
+        break;
+      }
+    }
+  }
+  
+  //printf("using xbin %d, ebin %d\n", xbin, ebin);
+
+  //interpolating at xbin and xbin+1
+  TGraph *gx1 = new TGraph();
+  gx1->SetPoint(0, fEnLossInv[index].e[ebin], fEnLossInv[index].enLoss[ebin][xbin]);
+  gx1->SetPoint(1, fEnLossInv[index].e[ebin+1], fEnLossInv[index].enLoss[ebin+1][xbin]);
+  
+  //printf("Graph 1: e %f %f, dE %f %f\n", fEnLossInv[index].e[ebin], fEnLossInv[index].e[ebin+1], fEnLossInv[index].enLoss[ebin][xbin], fEnLossInv[index].enLoss[ebin+1][xbin]);
+
+  TGraph *gx2 = new TGraph();
+  gx2->SetPoint(0, fEnLossInv[index].e[ebin], fEnLossInv[index].enLoss[ebin][xbin+1]);
+  gx2->SetPoint(1, fEnLossInv[index].e[ebin+1], fEnLossInv[index].enLoss[ebin+1][xbin+1]);
+
+  //printf("Graph 2: e %f %f, dE %f %f\n", fEnLossInv[index].e[ebin], fEnLossInv[index].e[ebin+1], fEnLossInv[index].enLoss[ebin][xbin+1], fEnLossInv[index].enLoss[ebin+1][xbin+1]);
+
+  Double_t dE1=gx1->Eval(en);
+  Double_t dE2=gx2->Eval(en);
+
+  TGraph *gem = new TGraph();
+  gem->SetPoint(0, fEnLossInv[index].x[xbin], dE1);
+  gem->SetPoint(1, fEnLossInv[index].x[xbin+1], dE2);
+  
+  //printf("Graph M: x %f %f, dE %f %f\n", fEnLossInv[index].x[xbin], fEnLossInv[index].x[xbin+1], dE1, dE2);
+
+  Double_t enca = gem->Eval(dist);
+ 
+  //printf("Resulting En Loss is %f\n", enloca);
+
+  return enca;
+}
+

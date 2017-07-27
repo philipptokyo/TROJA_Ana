@@ -75,6 +75,8 @@ typedef struct _dat
   //Int_t grapeCrystal;
   //Int_t grapeSegment;
 
+  Double_t targetEnergyLoss; // for debugging only
+
 } dat;
 
 
@@ -182,6 +184,8 @@ void SetResPar(Int_t d, Int_t p, Double_t v) { detGeo[d].resPar[p]=v ;}
        Double_t GetTargetSize(Int_t i) {return fTarget.size[i]; }
             string GetTargetMaterial() {return fTarget.material; }
    
+   void SetPosDet(Int_t id, Bool_t stat) {fPosDet[id] = stat;}
+   Bool_t IsPosDet(Int_t id) {return fPosDet[id];}
    
    
    
@@ -204,6 +208,9 @@ void SetResPar(Int_t d, Int_t p, Double_t v) { detGeo[d].resPar[p]=v ;}
     Int_t fNumberOfGrapeDetectors;
     
     Bool_t fIncludeBeamPipe;
+
+    //Int_t fNoPosDets;
+    Bool_t fPosDet[maxDetectors]; 
 
 
 };

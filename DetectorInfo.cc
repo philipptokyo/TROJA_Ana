@@ -37,6 +37,10 @@ DetectorInfo::DetectorInfo()
   fIncludeGrape=false;
   fNumberOfGrapeDetectors=6;
   fIncludeBeamPipe=false;
+
+  for(Int_t d=0; d<GetMaxNoDetectors(); d++){
+    fPosDet[d] = false;
+  }
   
 }
 
@@ -120,6 +124,8 @@ void DetectorInfo::ResetData()
   //detData.grapeCrystal=-1;
   //detData.grapeSegment=-1;
 
+  detData.targetEnergyLoss=0.0;
+
 }
 
 
@@ -186,7 +192,10 @@ void DetectorInfo::CalcStripNumbers(Int_t detID, Double_t hx, Double_t hy, Doubl
     stripx = (Int_t)(vpix.X()/(GetSize0(detID)/GetNoStripsX(detID)));
     stripy = (Int_t)(vpix.Y()/(GetSize1(detID)/GetNoStripsY(detID)));
 
-  } else if(strcmp(detGeo[detID].type.c_str(), "DSSDtube")==0){
+  } else if( (strcmp(detGeo[detID].type.c_str(), "DSSDtube")==0) ||
+             (strcmp(detGeo[detID].type.c_str(), "CsItube")==0) ||
+             (strcmp(detGeo[detID].type.c_str(), "Altube")==0) 
+           ){
 
     TVector3 vRot(1.0, 0.0, 0.0); // rotation vector
 
@@ -250,7 +259,10 @@ void DetectorInfo::CalcHitPosition(Int_t detID, Int_t stripx, Int_t stripy, Doub
     vdet.RotateX(-GetRotationX(detID));
 
 
-  } else if(strcmp(detGeo[detID].type.c_str(), "DSSDtube")==0){
+  } else if( (strcmp(detGeo[detID].type.c_str(), "DSSDtube")==0) || 
+             (strcmp(detGeo[detID].type.c_str(), "CsItube")==0) ||
+             (strcmp(detGeo[detID].type.c_str(), "Altube")==0) 
+           ){
 
     Double_t phips = GetSize4(detID)/((Double_t)GetNoStripsX(detID));  // angle coverage phi per x strip
     Double_t radps = (GetSize1(detID)-GetSize0(detID))/((Double_t)GetNoStripsY(detID)); // radius coverage per y strip
@@ -341,8 +353,8 @@ void DetectorInfo::Parse(string filename)
   Int_t counter=-1;
   const Int_t stopper=1000000;
 
-  const Int_t maxArg=8;
-  char temp[maxArg][500];
+  const Int_t maxArg=20;
+  char temp[maxArg][200];
 
 
 
@@ -433,6 +445,20 @@ void DetectorInfo::Parse(string filename)
       }
       printf("\n");
     }
+    else if(strcmp(temp[0],"position_detectors")==0){
+      //Int_t nPosDet=0;
+      printf("Setting position sensitive detectors: ");
+      for(Int_t d=1; d<maxArg; d++){
+        string tmpstr = temp[d];
+        if(tmpstr.size()>0){
+          Int_t pdi=atoi(tmpstr.c_str());
+          printf("%d ", pdi);
+          SetPosDet(pdi, true);
+        }
+      }
+      printf("\n");
+
+    }
     else if(strcmp(temp[0],"include_grape")==0){
       fIncludeGrape=true;
       fNumberOfGrapeDetectors=atoi(temp[1]);
@@ -506,7 +532,12 @@ void DetectorInfo::CheckInput()
   for(Int_t d=0; d<fNoOfDet; d++){
     Double_t checkSum=0.0;
     
-    if( !((strcmp(detGeo[d].type.c_str(),"DSSDbox")==0) || (strcmp(detGeo[d].type.c_str(),"DSSDtube")==0) || (strcmp(detGeo[d].type.c_str(),"CsIbox")==0))){
+    if( !( (strcmp(detGeo[d].type.c_str(),"DSSDbox")==0) || 
+           (strcmp(detGeo[d].type.c_str(),"DSSDtube")==0) || 
+           (strcmp(detGeo[d].type.c_str(),"CsItube")==0) || 
+           (strcmp(detGeo[d].type.c_str(),"Altube")==0) || 
+           (strcmp(detGeo[d].type.c_str(),"CsIbox")==0)
+         )){
       printf("Error: invalid detector type '%s' for detector %d!\n", GetType(d).c_str(), d);
       abort();
     }
@@ -529,8 +560,11 @@ void DetectorInfo::CheckInput()
       abort();
     }
     checkSum = detGeo[d].size[3] * detGeo[d].size[4];
-    if( (strcmp(detGeo[d].type.c_str(),"DSSDtube")==0) && TMath::IsNaN(checkSum) ){
-      printf("Error: invalid angle for detector %d type 'DSSDtube': phi_start = %f, phi_D = %f\n", d, detGeo[d].size[3], detGeo[d].size[4]);
+    if( ( (strcmp(detGeo[d].type.c_str(),"DSSDtube")==0) ||
+          (strcmp(detGeo[d].type.c_str(),"CsItube")==0) ||
+          (strcmp(detGeo[d].type.c_str(),"Altube")==0)
+        ) && TMath::IsNaN(checkSum) ){
+      printf("Error: invalid angle for detector %d type '~tube': phi_start = %f, phi_D = %f\n", d, detGeo[d].size[3], detGeo[d].size[4]);
       abort();
     }
     
