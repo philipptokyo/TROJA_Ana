@@ -34,6 +34,8 @@ DetectorInfo::DetectorInfo()
   fRandomizer = new TRandom3();
   fRandomizer->SetSeed(0);
 
+  fIncludeDali=false;
+  
   fIncludeGrape=false;
   fNumberOfGrapeDetectors=6;
   fIncludeBeamPipe=false;
@@ -123,6 +125,18 @@ void DetectorInfo::ResetData()
   //detData.grapeDet=-1;
   //detData.grapeCrystal=-1;
   //detData.grapeSegment=-1;
+
+  for(Int_t d=0; d<NUMBEROFDALI2CRYSTALS; d++){
+    detData.fDaliCrystalFlag[d] = false;
+    detData.fDaliCrystalEnergy[d] = NAN;
+    detData.fDaliCrystalMult = 0;
+    detData.fDaliCrystalTime[d] = 0.0;
+    detData.fDaliFITime[d] = 0.0;
+    detData.fDaliFIX[d] = NAN;
+    detData.fDaliFIY[d] = NAN;
+    detData.fDaliFIZ[d] = NAN;
+
+  }
 
   detData.targetEnergyLoss=0.0;
 
@@ -458,6 +472,10 @@ void DetectorInfo::Parse(string filename)
       }
       printf("\n");
 
+    }
+    else if(strcmp(temp[0],"include_dali")==0){
+      fIncludeDali=true;
+      printf("Including %d DALI detectors\n", fNumberOfGrapeDetectors);
     }
     else if(strcmp(temp[0],"include_grape")==0){
       fIncludeGrape=true;

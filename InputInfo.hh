@@ -15,6 +15,7 @@ class InputInfo
   // file names
   char fOutFileNameReaction[500];
   char fOutFileNameFresco[500];
+  char fOutFileNamePace[500];
   char fOutFileNameMakeEvents[500];
   char fOutFileNameTroja[500];
   char fInFileNameGeometry[500];
@@ -45,6 +46,8 @@ class InputInfo
   Bool_t HaveFrescoFileName(){return fHaveFrescoFileName;};
   void UnsetFrescoFileName(){fHaveFrescoFileName=false;};
   Bool_t FrescoHeaderOnly(){return fFrescoHeaderOnly;};
+  Bool_t HavePaceFileName(){return fHavePaceFileName;};
+  Bool_t PaceOnly(){return fPaceOnly;};
   Bool_t ProfileBeamE(){return fProfileE;};
   Bool_t ProfileBeamX(){return fProfileX;};
   Bool_t ProfileBeamY(){return fProfileY;};
@@ -78,6 +81,8 @@ class InputInfo
   Bool_t fHaveOedoSimFileName; 
   Bool_t fHaveFrescoFileName;
   Bool_t fFrescoHeaderOnly;
+  Bool_t fHavePaceFileName;
+  Bool_t fPaceOnly;
   Bool_t fProfileE, fProfileX, fProfileY, fProfileA, fProfileB;
   Bool_t fNoBeamTracking;
   Bool_t fIncludeElastic; 

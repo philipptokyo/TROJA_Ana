@@ -8,6 +8,7 @@
 
 //#define maxDetectors 10
 #include "/home/philipp/sim/troja/include/DetectorGlobals.hh"
+#include "/home/philipp/sim/troja/include/DaliGlobals.hh"
 
 using namespace std;
 
@@ -74,6 +75,15 @@ typedef struct _dat
   //Int_t grapeDet;
   //Int_t grapeCrystal;
   //Int_t grapeSegment;
+
+  Bool_t   fDaliCrystalFlag[NUMBEROFDALI2CRYSTALS];
+  Float_t  fDaliCrystalEnergy[NUMBEROFDALI2CRYSTALS];
+  Int_t    fDaliCrystalMult;
+  Float_t  fDaliCrystalTime[NUMBEROFDALI2CRYSTALS];
+  Double_t fDaliFITime[NUMBEROFDALI2CRYSTALS];
+  Float_t  fDaliFIX[NUMBEROFDALI2CRYSTALS];
+  Float_t  fDaliFIY[NUMBEROFDALI2CRYSTALS];
+  Float_t  fDaliFIZ[NUMBEROFDALI2CRYSTALS];
 
   Double_t targetEnergyLoss; // for debugging only
 
@@ -142,6 +152,8 @@ Double_t GetResPar(Int_t d, Int_t p) const { return detGeo[d].resPar[p] ;}
     TRotation* GetRotationMatrix(Int_t d);
     TRotation GetInverseRotationMatrix(Int_t d);
 
+    Bool_t IncludeDali() {return fIncludeDali;}
+    
     Bool_t IncludeGrape() {return fIncludeGrape;}
     Int_t GetNumberOfGrapeDetectors() {return fNumberOfGrapeDetectors;}
     Bool_t IncludeBeamPipe() {return fIncludeBeamPipe;}
@@ -203,6 +215,8 @@ void SetResPar(Int_t d, Int_t p, Double_t v) { detGeo[d].resPar[p]=v ;}
     tar fTarget;
 
     Int_t fNoOfDet; // number of detectors
+
+    Bool_t fIncludeDali;
 
     Bool_t fIncludeGrape;
     Int_t fNumberOfGrapeDetectors;

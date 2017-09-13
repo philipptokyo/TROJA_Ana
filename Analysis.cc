@@ -480,18 +480,18 @@ void Analysis::ProcessDetectorHits(){  // private
   //Int_t firstDetID = -1; // find out which detector fired first
   //Int_t seconDetID = -1; // find out which detector fired second 
 
-printf("ProcessDetectorHits\n");
+//printf("ProcessDetectorHits\n");
 
 // sum up all energy losses
   for(Int_t d=0; d<maxDetectors; d++){
     detHitMul += detHit[d];
-printf("d %d, detHit[d] %d, detStripX[d] %d, detStripY[d] %d\n", d, detHit[d], detStripX[d], detStripY[d]);
+//printf("d %d, detHit[d] %d, detStripX[d] %d, detStripY[d] %d\n", d, detHit[d], detStripX[d], detStripY[d]);
     if(detHit[d]==1){
 
       energyKinLight+=detEnergyLoss[d];
 
       if(detInfo->IsPosDet(d)){
-printf("Detectr %d is pos det\n", d);
+//printf("Detectr %d is pos det\n", d);
         // reconstruct position from strip number
         detInfo->CalcHitPosition(d, detStripX[d], detStripY[d], recoPosX[d], recoPosY[d], recoPosZ[d]);
   
@@ -516,7 +516,7 @@ printf("Detectr %d is pos det\n", d);
 
 
 //if(detHitMul>0){
-printf("used detector is %d, hitmul is %d\n", firstDetID, detHitMul);
+//  printf("used detector is %d, hitmul is %d\n", firstDetID, detHitMul);
 //}
 
 
@@ -527,7 +527,7 @@ printf("used detector is %d, hitmul is %d\n", firstDetID, detHitMul);
   simDetectorHitPos[1] = recoPosY[firstDetID];
   simDetectorHitPos[2] = recoPosZ[firstDetID];
 
-printf("position: %f %f %f\n", recoPosX[firstDetID], recoPosY[firstDetID], recoPosZ[firstDetID]);
+//printf("position: %f %f %f\n", recoPosX[firstDetID], recoPosY[firstDetID], recoPosZ[firstDetID]);
 
 
 } // ProcessDetectorHits
@@ -655,7 +655,7 @@ void Analysis::Analysis2(){
     
     ProcessDetectorHits();
 
-printf("after ProcessDetectorHits:\ndetHitMul %d\n", detHitMul);
+//printf("after ProcessDetectorHits:\ndetHitMul %d\n", detHitMul);
     if(detHitMul==0 && grapeDetMul==0){
       continue; // no hits in silicons and no hits in Gamma Det
     }
@@ -794,7 +794,7 @@ void Analysis::MissingMass(Int_t channel){
 
   TVector3 vLight(simDetectorHitPos[0]-beamX, simDetectorHitPos[1]-beamY, simDetectorHitPos[2]-beamZ); // take beam position into account
   
-printf("missing mass\nposition: %f %f %f\n\n", simDetectorHitPos[0], simDetectorHitPos[1], simDetectorHitPos[2]);
+//printf("missing mass\nposition: %f %f %f\n\n", simDetectorHitPos[0], simDetectorHitPos[1], simDetectorHitPos[2]);
 
   vLight.RotateY(-beamA/1000.0);
   vLight.RotateX(-beamB/1000.0);

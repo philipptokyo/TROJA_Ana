@@ -29,6 +29,8 @@ InputInfo::InputInfo(){
   fHaveOedoSimFileName=false;
   fHaveFrescoFileName=false;
   fFrescoHeaderOnly=false;
+  fHavePaceFileName=false;
+  fPaceOnly=false;
   fSource=false;
   
   fProfileE=false;	
@@ -129,6 +131,15 @@ void InputInfo::parse(char filename[100]){
     else if(strcmp(temp[0],"fresco_header_only")==0)  {
       fFrescoHeaderOnly = true;
       cout << "Only Header information is taken from fresco file " << endl;
+    }
+    else if(strcmp(temp[0],"output_textfile_pace")==0)  {
+      strcpy(fOutFileNamePace,temp[1]);
+      fHavePaceFileName = true;
+      cout << "Output file of pace is '" << fOutFileNamePace << "'" << endl;
+    }
+    else if(strcmp(temp[0],"pace_only")==0)  {
+      fPaceOnly = true;
+      cout << "Only pace protons will be simulated " << endl;
     }
     else if(strcmp(temp[0],"output_rootfile_makeEvents")==0){
       strcpy(fOutFileNameMakeEvents,temp[1]);
