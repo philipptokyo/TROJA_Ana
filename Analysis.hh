@@ -5,6 +5,7 @@
 
 #include "InputInfo.hh"
 #include "DetectorInfo.hh"
+#include "/home/philipp/sim/troja/include/DaliGlobals.hh"
 
 #include "Nucleus.hh"
 #include "Kinematics.hh"
@@ -26,7 +27,8 @@ class Analysis
     Bool_t GetCuts();
     void Analysis2();
     void MissingMass(Int_t channel);
-    void AnalysisGamma();
+    void AnalysisGrape();
+    void AnalysisDali();
 
     Analysis(InputInfo *i, DetectorInfo* d);
     
@@ -47,6 +49,7 @@ class Analysis
     TFile* fileAnalysis;
 
     TTree* tree;
+    TTree* treeHeader; // header from geant sim
     TTree* treeBeam;
     TTree* treeAnaHeader[maxCutType];
     TTree* treeAnalysis1;
@@ -94,6 +97,7 @@ class Analysis
     Int_t type; // reaction type; 0 = elastic scattering, 1 = (d,p) 
 
     Double_t gammaProj, gammaLight;
+    Double_t betaProj;
     Double_t energyTotProj, energyTotLight;
     //  Double_t energyKinHeavy=0.0, energyTotHeavy=0.0, gammaHeavy=0.0, momentumHeavy=0.0;
     Double_t energyKinLight, energyKinLightUncorr; // is sum of all energy losses
@@ -124,12 +128,26 @@ class Analysis
     Double_t grapeCryEnergyDC[grapeMaxDet][grapeMaxCry];
     Double_t grapeSegEnergyDC[grapeMaxDet][grapeMaxCry][grapeMaxSeg];
 
-
-
-
-
-
     
+    
+    Int_t    daliCrystalMult;
+    Bool_t   daliCrystalFlag[NUMBEROFDALI2CRYSTALS];
+    Float_t  daliCrystalEnergy[NUMBEROFDALI2CRYSTALS]; // without resolution
+    Float_t  daliCrystalTime[NUMBEROFDALI2CRYSTALS];
+    Double_t daliFITime[NUMBEROFDALI2CRYSTALS];
+    Float_t  daliFIX[NUMBEROFDALI2CRYSTALS];
+    Float_t  daliFIY[NUMBEROFDALI2CRYSTALS];
+    Float_t  daliFIZ[NUMBEROFDALI2CRYSTALS];
+
+    Float_t  daliEnergy[NUMBEROFDALI2CRYSTALS]; // with resolution
+    Float_t  daliEnergyDoppler[NUMBEROFDALI2CRYSTALS]; // with resolution, doppler corrected
+
+    Int_t    daliAddbackMult;
+    Bool_t   daliAddbackFlag[NUMBEROFDALI2CRYSTALS];
+    Float_t  daliAddbackEnergy[NUMBEROFDALI2CRYSTALS]; // addbacked, ith resolution
+    Float_t  daliAddbackEnergyDoppler[NUMBEROFDALI2CRYSTALS]; // addbacked, with resolution, doppler corrected
+
+
     Bool_t cutExists[maxCutType][maxCuts];
     TCutG* cut[maxCutType][maxCuts];
 

@@ -85,6 +85,7 @@ void Analysis::ResetVariables(){
   type = -1;
 
   gammaProj=0.0;
+  betaProj=0.0;
   gammaLight=0.0;
   energyTotProj=0.0;
   energyTotLight=0.0;
@@ -115,6 +116,28 @@ void Analysis::ResetVariables(){
         grapeSegEnergyDC[d][c][s]=NAN;
       }
     }
+  }
+
+  daliCrystalMult=0;
+  daliAddbackMult=0;
+  for(Int_t d=0; d<NUMBEROFDALI2CRYSTALS; d++){
+
+    daliCrystalFlag[d]=false;
+    daliCrystalEnergy[d]=NAN;
+    daliCrystalTime[d]=NAN;
+    daliFITime[d]=NAN;
+    daliFIX[d]=NAN;
+    daliFIY[d]=NAN;
+    daliFIZ[d]=NAN;
+
+    daliEnergy[d]=NAN; // with resolution
+    daliEnergyDoppler[d]=NAN; // with resolution, doppler corrected
+
+    daliAddbackFlag[d]=false;
+    daliAddbackEnergy[d]=NAN; // addbacked, ith resolution
+    daliAddbackEnergyDoppler[d]=NAN; // addbacked, with resolution, doppler corrected
+
+
   }
 
 
@@ -177,6 +200,26 @@ Bool_t Analysis::Init(){
    return false;
   }
 
+  treeHeader = (TTree*)infile->Get("header");
+  //TTree* tree=(TTree*)infile->Get("events"); //simulation input
+  if(!treeHeader){
+    cout << "TTree 'header' not found in geant root file! That can be ignored, but some anaysis steps will not work (e.g. Dali Doppler correction)" << endl;
+    //return false;
+  }else{
+    treeHeader->SetBranchAddress("daliPosX", (detInfo->daliHead.fDaliPosX));
+    treeHeader->SetBranchAddress("daliPosY", (detInfo->daliHead.fDaliPosY));
+    treeHeader->SetBranchAddress("daliPosZ", (detInfo->daliHead.fDaliPosZ));
+    treeHeader->SetBranchAddress("daliTheta", (detInfo->daliHead.fDaliTheta));
+    treeHeader->SetBranchAddress("daliPhi", (detInfo->daliHead.fDaliPhi));
+    treeHeader->SetBranchAddress("daliDistance", (detInfo->daliHead.fDaliDistance));
+    treeHeader->SetBranchAddress("daliTimeResolution", (detInfo->daliHead.fDaliTimeResolution));
+    treeHeader->SetBranchAddress("daliEnergyResolutionInd", (detInfo->daliHead.fDaliEnergyResolutionInd));
+
+    treeHeader->GetEvent(0);
+  }
+
+
+
   tree = (TTree*)infile->Get("troja");
   //TTree* tree=(TTree*)infile->Get("events"); //simulation input
   if(!tree){
@@ -222,15 +265,29 @@ Bool_t Analysis::Init(){
   
   tree->SetBranchAddress("targetEnergyLoss", &targetEnergyLoss);
   
-  tree->SetBranchAddress("grapeDetMul", &grapeDetMul); // ID of the detector with the first interaction point
+  if(detInfo->IncludeGrape()){
+    tree->SetBranchAddress("grapeDetMul", &grapeDetMul); // ID of the detector with the first interaction point
 
-  tree->SetBranchAddress("grapeCryMul", grapeCryMul); // ID of the detector with the first interaction point
-  tree->SetBranchAddress("grapeSegMul", grapeSegMul); // ID of the detector with the first interaction point
+    tree->SetBranchAddress("grapeCryMul", grapeCryMul); // ID of the detector with the first interaction point
+    tree->SetBranchAddress("grapeSegMul", grapeSegMul); // ID of the detector with the first interaction point
 
-  tree->SetBranchAddress("grapeDetEnergy", grapeDetEnergy); // ID of the detector with the first interaction point
-  tree->SetBranchAddress("grapeCryEnergy", grapeCryEnergy); // ID of the detector with the first interaction point
-  tree->SetBranchAddress("grapeSegEnergy", grapeSegEnergy); // ID of the detector with the first interaction point
+    tree->SetBranchAddress("grapeDetEnergy", grapeDetEnergy); // ID of the detector with the first interaction point
+    tree->SetBranchAddress("grapeCryEnergy", grapeCryEnergy); // ID of the detector with the first interaction point
+    tree->SetBranchAddress("grapeSegEnergy", grapeSegEnergy); // ID of the detector with the first interaction point
+  }
 
+  if(detInfo->IncludeDali()){
+    
+    tree->SetBranchAddress("DALI2Flag",          daliCrystalFlag);
+    tree->SetBranchAddress("DALI2EnergyNotCor",  daliCrystalEnergy);
+    tree->SetBranchAddress("DALI2Mult",          &daliCrystalMult);
+    tree->SetBranchAddress("DALI2Time",          daliCrystalTime);
+    tree->SetBranchAddress("DALI2FITime",        daliFITime);
+    tree->SetBranchAddress("DALI2FIX",           daliFIX);
+    tree->SetBranchAddress("DALI2FIY",           daliFIY);
+    tree->SetBranchAddress("DALI2FIZ",           daliFIZ);
+
+  }
 
 
   fileAnalysis = new TFile(info->fOutFileNameAnalysis, "recreate");
@@ -315,6 +372,10 @@ Bool_t Analysis::Init(){
     treeAnalysis2[f]->Branch("simLightThetaLab", &thetaLightLab, "simLightThetaLab/D");
     treeAnalysis2[f]->Branch("simLightThetaCM", &thetaLightCM, "simLightThetaCM/D");     
     treeAnalysis2[f]->Branch("simLightPhi", &phiLight, "simLightPhi/D");
+    
+    
+    treeAnalysis2[f]->Branch("anaProjBeta", &betaProj, "anaProjBeta/D");
+    treeAnalysis2[f]->Branch("anaProjGamma", &gammaProj, "anaProjGamma/D");
 
 
     // new analysis data
@@ -338,29 +399,68 @@ Bool_t Analysis::Init(){
     
     //treeAnalysis2[f]->Branch("energyGamma", &energyGamma, "energyGamma/D");
     //treeAnalysis2[f]->Branch("energyGammaDC", &energyGammaDC, "energyGammaDC/D");
-    
-    treeAnalysis2[f]->Branch("grapeDetMul", &grapeDetMul, "grapeDetMul/I"); // ID of the detector with the first interaction point
+   
+    if(detInfo->IncludeGrape()){
+      treeAnalysis2[f]->Branch("grapeDetMul", &grapeDetMul, "grapeDetMul/I"); // ID of the detector with the first interaction point
 
-    sprintf(tmpName, "grapeCryMul[%d]/I", grapeMaxDet);
-    treeAnalysis2[f]->Branch("grapeCryMul", grapeCryMul, tmpName); // ID of the detector with the first interaction point
-    sprintf(tmpName, "grapeSegMul[%d][%d]/I", grapeMaxDet, grapeMaxCry);
-    treeAnalysis2[f]->Branch("grapeSegMul", grapeSegMul, tmpName); // ID of the detector with the first interaction point
+      sprintf(tmpName, "grapeCryMul[%d]/I", grapeMaxDet);
+      treeAnalysis2[f]->Branch("grapeCryMul", grapeCryMul, tmpName); // ID of the detector with the first interaction point
+      sprintf(tmpName, "grapeSegMul[%d][%d]/I", grapeMaxDet, grapeMaxCry);
+      treeAnalysis2[f]->Branch("grapeSegMul", grapeSegMul, tmpName); // ID of the detector with the first interaction point
   
-    sprintf(tmpName, "grapeDetEnergy[%d]/D", grapeMaxDet);
-    treeAnalysis2[f]->Branch("grapeDetEnergy", grapeDetEnergy, tmpName); // ID of the detector with the first interaction point
-    sprintf(tmpName, "grapeCryEnergy[%d][%d]/D", grapeMaxDet, grapeMaxCry);
-    treeAnalysis2[f]->Branch("grapeCryEnergy", grapeCryEnergy, tmpName); // ID of the detector with the first interaction point
-    sprintf(tmpName, "grapeSegEnergy[%d][%d][%d]/D", grapeMaxDet, grapeMaxCry, grapeMaxSeg);
-    treeAnalysis2[f]->Branch("grapeSegEnergy", grapeSegEnergy, tmpName); // ID of the detector with the first interaction point
+      sprintf(tmpName, "grapeDetEnergy[%d]/D", grapeMaxDet);
+      treeAnalysis2[f]->Branch("grapeDetEnergy", grapeDetEnergy, tmpName); // ID of the detector with the first interaction point
+      sprintf(tmpName, "grapeCryEnergy[%d][%d]/D", grapeMaxDet, grapeMaxCry);
+      treeAnalysis2[f]->Branch("grapeCryEnergy", grapeCryEnergy, tmpName); // ID of the detector with the first interaction point
+      sprintf(tmpName, "grapeSegEnergy[%d][%d][%d]/D", grapeMaxDet, grapeMaxCry, grapeMaxSeg);
+      treeAnalysis2[f]->Branch("grapeSegEnergy", grapeSegEnergy, tmpName); // ID of the detector with the first interaction point
   
-    treeAnalysis2[f]->Branch("grapeSumEnergyDC", &grapeSumEnergyDC, "grapeSumEnergyDC/D"); // ID of the detector with the first interaction point
-    sprintf(tmpName, "grapeDetEnergyDC[%d]/D", grapeMaxDet);
-    treeAnalysis2[f]->Branch("grapeDetEnergyDC", grapeDetEnergyDC, tmpName); // ID of the detector with the first interaction point
-    sprintf(tmpName, "grapeCryEnergyDC[%d][%d]/D", grapeMaxDet, grapeMaxCry);
-    treeAnalysis2[f]->Branch("grapeCryEnergyDC", grapeCryEnergyDC, tmpName); // ID of the detector with the first interaction point
-    sprintf(tmpName, "grapeSegEnergyDC[%d][%d][%d]/D", grapeMaxDet, grapeMaxCry, grapeMaxSeg);
-    treeAnalysis2[f]->Branch("grapeSegEnergyDC", grapeSegEnergyDC, tmpName); // ID of the detector with the first interaction point
-  
+      treeAnalysis2[f]->Branch("grapeSumEnergyDC", &grapeSumEnergyDC, "grapeSumEnergyDC/D"); // ID of the detector with the first interaction point
+      sprintf(tmpName, "grapeDetEnergyDC[%d]/D", grapeMaxDet);
+      treeAnalysis2[f]->Branch("grapeDetEnergyDC", grapeDetEnergyDC, tmpName); // ID of the detector with the first interaction point
+      sprintf(tmpName, "grapeCryEnergyDC[%d][%d]/D", grapeMaxDet, grapeMaxCry);
+      treeAnalysis2[f]->Branch("grapeCryEnergyDC", grapeCryEnergyDC, tmpName); // ID of the detector with the first interaction point
+      sprintf(tmpName, "grapeSegEnergyDC[%d][%d][%d]/D", grapeMaxDet, grapeMaxCry, grapeMaxSeg);
+      treeAnalysis2[f]->Branch("grapeSegEnergyDC", grapeSegEnergyDC, tmpName); // ID of the detector with the first interaction point
+    }
+
+
+    if(detInfo->IncludeDali()){
+        
+      sprintf(tmpName, "DALI2Mult/I");
+      treeAnalysis2[f]->Branch("DALI2Mult", &(daliCrystalMult), tmpName);
+      sprintf(tmpName, "DALI2Flag[%d]/O", NUMBEROFDALI2CRYSTALS);
+      treeAnalysis2[f]->Branch("DALI2Flag", (daliCrystalFlag), tmpName);
+      sprintf(tmpName, "DALI2EnergyNotCor[%d]/F", NUMBEROFDALI2CRYSTALS);
+      treeAnalysis2[f]->Branch("DALI2EnergyNotCor", (daliCrystalEnergy), tmpName);
+      sprintf(tmpName, "DALI2Time[%d]/F", NUMBEROFDALI2CRYSTALS);
+      treeAnalysis2[f]->Branch("DALI2Time", (daliCrystalTime), tmpName);
+      sprintf(tmpName, "DALI2FITime[%d]/D", NUMBEROFDALI2CRYSTALS);
+      treeAnalysis2[f]->Branch("DALI2FITime", (daliFITime), tmpName);
+      sprintf(tmpName, "DALI2FIX[%d]/F", NUMBEROFDALI2CRYSTALS);
+      treeAnalysis2[f]->Branch("DALI2FIX", (daliFIX), tmpName);
+      sprintf(tmpName, "DALI2FIY[%d]/F", NUMBEROFDALI2CRYSTALS);
+      treeAnalysis2[f]->Branch("DALI2FIY", (daliFIY), tmpName);
+      sprintf(tmpName, "DALI2FIZ[%d]/F", NUMBEROFDALI2CRYSTALS);
+      treeAnalysis2[f]->Branch("DALI2FIZ", (daliFIZ), tmpName);
+
+
+      sprintf(tmpName, "DALI2Energy[%d]/F", NUMBEROFDALI2CRYSTALS);
+      treeAnalysis2[f]->Branch("DALI2Energy", (daliEnergy), tmpName); // with resolution
+      sprintf(tmpName, "DALI2EnergyDoppler[%d]/F", NUMBEROFDALI2CRYSTALS);
+      treeAnalysis2[f]->Branch("DALI2EnergyDoppler", (daliEnergyDoppler), tmpName); // with resolution
+      
+      
+      sprintf(tmpName, "DALI2AddbackMult/I");
+      treeAnalysis2[f]->Branch("DALI2AddbackMult", &(daliAddbackMult), tmpName);
+      sprintf(tmpName, "DALI2AddbackFlag[%d]/O", NUMBEROFDALI2CRYSTALS);
+      treeAnalysis2[f]->Branch("DALI2AddbackFlag", (daliAddbackFlag), tmpName);
+      sprintf(tmpName, "DALI2AddbackEnergy[%d]/F", NUMBEROFDALI2CRYSTALS);
+      treeAnalysis2[f]->Branch("DALI2AddbackEnergy", (daliAddbackEnergy), tmpName); 
+      sprintf(tmpName, "DALI2AddbackEnergyDoppler[%d]/F", NUMBEROFDALI2CRYSTALS);
+      treeAnalysis2[f]->Branch("DALI2AddbackEnergyDoppler", (daliAddbackEnergyDoppler), tmpName); 
+
+    }
 
   } // treeAnalysis2
 
@@ -538,6 +638,10 @@ void Analysis::ProcessDetectorHits(){  // private
 
 
 void Analysis::Analysis1(){
+  // this function is only processing the silicon detector hits
+  // for delta E - E plot 
+  // after selection in the PID plot, rerun the program with 
+  // cuts for analysis2 (missing mass and ggf. gamma processing)
   
   // define histograms
   TH2F* hdEE_A=new TH2F("hdEE_A_analysis1", "delta E vs. E, all directions, Analysis1 ", 1000,0,25,100,0,8);
@@ -656,17 +760,15 @@ void Analysis::Analysis2(){
     ProcessDetectorHits();
 
 //printf("after ProcessDetectorHits:\ndetHitMul %d\n", detHitMul);
-    if(detHitMul==0 && grapeDetMul==0){
-      continue; // no hits in silicons and no hits in Gamma Det
+    if(detHitMul==0){
+    //if(detHitMul==0 && grapeDetMul==0){ // no hits in silicons and no hits in Gamma Det
+      
+      continue;
     }
 
 //printf("\n\nEvent %d\n", e);
 //printf("detHitMul %d, grapeDetMul %d\n", detHitMul, grapeDetMul);
 
-    if(grapeDetMul>0){
-      AnalysisGamma();
-      //printf("grapeSumEnergyDC %f\n", grapeSumEnergyDC);
-    }
 
     if(detHitMul>2){
       //printf("Warning: more than 2 detectors fired in event %d! Such events are not handled properly!\n", e);
@@ -704,19 +806,26 @@ void Analysis::Analysis2(){
         if(type!=warningType){
           goodEvents++;
         }
-      }
       
-      
-      if(doAnalysisType[f] && grapeDetMul>0){
-        //printf("missing mass %f, grape sum %f\n", miss, grapeSumEnergyDC);
-      }
-      
-      
-      if(doAnalysisType[f] || grapeDetMul>0){
+        // now, after MissingMass, all information for gamma analysis are available
+        if((detInfo->IncludeGrape()) && (grapeDetMul>0)){
+          AnalysisGrape();
+          //printf("grapeSumEnergyDC %f\n", grapeSumEnergyDC);
+        }
+        
+        if(detInfo->IncludeDali() && (daliCrystalMult>0)){
+          //printf("daliCrystalMult %d\n", daliCrystalMult);
+          AnalysisDali();
+        }
+
+        
+        // finally, fill the tree
+        //if(doAnalysisType[f] || grapeDetMul>0){
         treeAnalysis2[f]->Fill();
       }
     }
 
+    
   
   } // event loop
 
@@ -863,6 +972,8 @@ void Analysis::MissingMass(Int_t channel){
 
   energyKinProj/=(Float_t)projA; // AMeV
 
+  gammaProj = ((energyKinProj*(Float_t)projA) / massProj) + 1.0;
+  betaProj = TMath::Sqrt(1.0 - 1.0/(gammaProj*gammaProj));
 
   delete kine;
 
@@ -873,16 +984,19 @@ void Analysis::MissingMass(Int_t channel){
 
 
 
-void Analysis::AnalysisGamma(){
+void Analysis::AnalysisGrape(){
   
   treeAnaHeader[0]->GetEvent(0); // only projectile information used; is same for all channels
   
   // Doppler correction
     
-  energyKinProj*=(Float_t)projA; 
+  //energyKinProj*=(Float_t)projA; 
   
-  Double_t projGamma = (energyKinProj / massProj) + 1.0;
-  Double_t projBeta = TMath::Sqrt(1.0 - 1.0/(projGamma*projGamma));
+//  Double_t projGamma = ((energyKinProj*(Float_t)projA) / massProj) + 1.0;
+//  Double_t projBeta = TMath::Sqrt(1.0 - 1.0/(projGamma*projGamma));
+
+  Double_t projGamma = gammaProj; // todo: remove this
+  Double_t projBeta = betaProj;
 
   Double_t grapeTheta[grapeMaxDet]={
                                     125.0, 125.0, 125.0, 125.0, 125.0, 125.0,
@@ -924,13 +1038,44 @@ void Analysis::AnalysisGamma(){
     }
   }
   
-  energyKinProj/=(Float_t)projA; 
+  //energyKinProj/=(Float_t)projA; 
 
-} // AnalysisGamma
-
-
+} // AnalysisGrape
 
 
+
+void Analysis::AnalysisDali(){
+  
+  //cout << endl;
+  for(Int_t d=0; d<NUMBEROFDALI2CRYSTALS; d++){
+    
+    // printf("Dali crystal %d, flag %d, energy %lf\n", d, daliCrystalFlag[d], daliEnergy[d]);
+
+    if(daliCrystalFlag[d]){
+      
+      // smear with energy resolution; todo: do this in sim already
+      daliEnergy[d] = daliCrystalEnergy[d];
+      // todo: dali threshold here
+
+
+      // for doppler correction:
+      // get theta of crystal
+      TVector3 vdt(
+                  detInfo->daliHead.fDaliPosX[d] - beamX,
+                  detInfo->daliHead.fDaliPosY[d] - beamY,
+                  detInfo->daliHead.fDaliPosZ[d] - beamZ
+                  );
+      Float_t daliTheta = vdt.Theta();
+      //printf("Dali theta from positon %lf,  from header %lf\n", daliTheta/TMath::Pi()*180.0, detInfo->daliHead.fDaliTheta[d]);
+
+
+      //Float_t df = gammaProj * (1.0 - (betaProj * TMath::Cos((daliTheta/180.0)*TMath::Pi())));
+      Float_t df = gammaProj * (1.0 - (betaProj * TMath::Cos(daliTheta)));
+      daliEnergyDoppler[d] = daliEnergy[d] * df;
+
+    }
+  }
+}
 
 
 

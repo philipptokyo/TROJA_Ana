@@ -34,6 +34,23 @@ typedef struct _geo
 } geo;
 
 
+typedef struct _daliGeo
+{
+
+  Double_t fDaliPosX[NUMBEROFDALI2CRYSTALS]; 
+  Double_t fDaliPosY[NUMBEROFDALI2CRYSTALS];
+  Double_t fDaliPosZ[NUMBEROFDALI2CRYSTALS];
+  Double_t fDaliTheta[NUMBEROFDALI2CRYSTALS];
+  Double_t fDaliPhi[NUMBEROFDALI2CRYSTALS];
+  Double_t fDaliDistance[NUMBEROFDALI2CRYSTALS];
+  
+  Float_t  fDaliTimeResolution[2];
+
+  //Int_t    fDaliTypeOfEnergyResolution;
+  //Float_t  fDaliEnergyResolution[2];
+  Float_t  fDaliEnergyResolutionInd[2][NUMBEROFDALI2CRYSTALS];   // individuall resolution for every detector
+
+} daliGeo;
 
 typedef struct _tar
 {
@@ -205,6 +222,7 @@ void SetResPar(Int_t d, Int_t p, Double_t v) { detGeo[d].resPar[p]=v ;}
     
     dat detData; // todo: this should be private, ne
 
+    daliGeo daliHead;
 
   private:
 
