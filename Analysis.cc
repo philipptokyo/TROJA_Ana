@@ -27,6 +27,14 @@ Analysis::Analysis(InputInfo *i, DetectorInfo* d){
 
   fEnLoss = new EnLoss();
   fEnLoss->CollectData("/home/philipp/analysis/troja/EnLossData/enLoss_tables_p_in_CD2.csv", 0);
+
+  if(detInfo->IncludeDali()){
+    for(Int_t i=0; i<NUMBEROFDALI2CRYSTALS; i++){
+    for(Int_t j=0; j<NUMBEROFDALI2CRYSTALS; j++){
+      daliAddbackTable[i][j]=0;
+    }
+    }
+  }
 }
 
 Analysis::~Analysis(){
@@ -120,6 +128,7 @@ void Analysis::ResetVariables(){
 
   daliCrystalMult=0;
   daliAddbackMult=0;
+  daliEnergyDopplerSum=NAN;
   for(Int_t d=0; d<NUMBEROFDALI2CRYSTALS; d++){
 
     daliCrystalFlag[d]=false;
@@ -133,13 +142,15 @@ void Analysis::ResetVariables(){
     daliEnergy[d]=NAN; // with resolution
     daliEnergyDoppler[d]=NAN; // with resolution, doppler corrected
 
+  }
+
+  for(Int_t d=0; d<NUMBEROFDALI2ADDBACKCRYSTALS; d++){
+    daliAddbackCrystalMult[d] = 0;
     daliAddbackFlag[d]=false;
     daliAddbackEnergy[d]=NAN; // addbacked, ith resolution
     daliAddbackEnergyDoppler[d]=NAN; // addbacked, with resolution, doppler corrected
-
-
+    daliCrystalUsedForAddback[d]=false;
   }
-
 
 
 }
@@ -449,10 +460,13 @@ Bool_t Analysis::Init(){
       treeAnalysis2[f]->Branch("DALI2Energy", (daliEnergy), tmpName); // with resolution
       sprintf(tmpName, "DALI2EnergyDoppler[%d]/F", NUMBEROFDALI2CRYSTALS);
       treeAnalysis2[f]->Branch("DALI2EnergyDoppler", (daliEnergyDoppler), tmpName); // with resolution
+      treeAnalysis2[f]->Branch("DALI2EnergyDopplerSum", &(daliEnergyDopplerSum), "DALI2EnergyDopplerSum/F"); 
       
       
       sprintf(tmpName, "DALI2AddbackMult/I");
       treeAnalysis2[f]->Branch("DALI2AddbackMult", &(daliAddbackMult), tmpName);
+      sprintf(tmpName, "DALI2AddbackCrystalMult[%d]/I", NUMBEROFDALI2ADDBACKCRYSTALS);
+      treeAnalysis2[f]->Branch("DALI2AddbackCrystalMult", (daliAddbackCrystalMult), tmpName);
       sprintf(tmpName, "DALI2AddbackFlag[%d]/O", NUMBEROFDALI2CRYSTALS);
       treeAnalysis2[f]->Branch("DALI2AddbackFlag", (daliAddbackFlag), tmpName);
       sprintf(tmpName, "DALI2AddbackEnergy[%d]/F", NUMBEROFDALI2CRYSTALS);
@@ -463,6 +477,68 @@ Bool_t Analysis::Init(){
     }
 
   } // treeAnalysis2
+
+
+
+
+
+  if(detInfo->IncludeDali()){
+    
+
+    printf("Reading Dali detector positions\n");
+    // get detector positions
+    FILE *fFileIn  = fopen("/home/philipp/sim/troja/dali2_geometry_in.txt","r");
+    for(Int_t i=0; !feof(fFileIn) && i<NUMBEROFDALI2CRYSTALS; i++)  {
+      //fscanf(fFileIn,"%f %f %f %f %f %f %f %i",&x,&y,&z,&psi,&theta,&phi,&rotSign,&detType);
+      Float_t trash1[4]={0.0};
+      Int_t   trash2=0;
+      fscanf(fFileIn,"%lf %lf %lf %f %f %f %f %i", &detInfo->daliHead.fDaliPosX[i], 
+                                                &detInfo->daliHead.fDaliPosY[i], 
+                                                &detInfo->daliHead.fDaliPosZ[i], 
+                                                &trash1[0], &trash1[1], &trash1[2], &trash1[3],
+                                                &trash2
+                                                );
+    }
+    fclose(fFileIn);
+    
+
+
+    // create an addback table
+    printf("Creating Dali addback table\n");
+    FILE *fAddbackTableIn  = fopen("AddbackTable.out","w");
+    Float_t dummy[3][2];
+    Bool_t inTable;
+    Int_t counter = 0;
+    for(Int_t i=0;i<NUMBEROFDALI2CRYSTALS;i++)  {
+      fprintf(fAddbackTableIn," %i",i);
+      for(Int_t j=i+1;j<NUMBEROFDALI2CRYSTALS;j++)  {
+        
+        dummy[0][0] = detInfo->daliHead.fDaliPosX[i];
+        dummy[1][0] = detInfo->daliHead.fDaliPosY[i];
+        dummy[2][0] = detInfo->daliHead.fDaliPosZ[i];
+        dummy[0][1] = detInfo->daliHead.fDaliPosX[j];
+        dummy[1][1] = detInfo->daliHead.fDaliPosY[j];
+        dummy[2][1] = detInfo->daliHead.fDaliPosZ[j];
+        
+  printf("Distance between %d and %d is ", i, j);
+        inTable = IncludeAddbackTable(dummy);  
+        if(inTable && counter< NUMBEROFDALI2ADDBACKCRYSTALS) {
+          fprintf(fAddbackTableIn," %i",j);
+          daliAddbackTable[i][counter] = j;
+          counter++;
+        }
+        if(counter == NUMBEROFDALI2ADDBACKCRYSTALS)  { //Too many detectors 
+          cout<<"You have to increase the variable NUMBEROFDALI2ADDBACKCRYSTALS!!!"<<endl;
+          abort();
+        }
+      }
+      counter = 0;
+      fprintf(fAddbackTableIn," \n");
+    }
+    fclose(fAddbackTableIn);
+  }
+
+
 
 
   Int_t nevents=tree->GetEntries();
@@ -586,11 +662,12 @@ void Analysis::ProcessDetectorHits(){  // private
   for(Int_t d=0; d<maxDetectors; d++){
     detHitMul += detHit[d];
 //printf("d %d, detHit[d] %d, detStripX[d] %d, detStripY[d] %d\n", d, detHit[d], detStripX[d], detStripY[d]);
-    if(detHit[d]==1){
+    //if(detHit[d]==1){
+    if( (detHit[d]==1) ){
 
       energyKinLight+=detEnergyLoss[d];
 
-      if(detInfo->IsPosDet(d)){
+      if(detInfo->IsPosDet(d) && (detStripX[d]>-1) && (detStripY[d]>-1)){
 //printf("Detectr %d is pos det\n", d);
         // reconstruct position from strip number
         detInfo->CalcHitPosition(d, detStripX[d], detStripY[d], recoPosX[d], recoPosY[d], recoPosZ[d]);
@@ -736,7 +813,8 @@ void Analysis::Analysis2(){
   //}
   Int_t goodEvents=0;
   Int_t multipleTypeEvents=0;
-  Int_t nevents=tree->GetEntries();
+  //Int_t nevents=tree->GetEntries();
+  Int_t nevents=info->fNumberEvents;
   
   // reset the aux vaiable 
   detHitMul3=0;
@@ -1046,6 +1124,12 @@ void Analysis::AnalysisGrape(){
 
 void Analysis::AnalysisDali(){
   
+  if(TMath::IsNaN(daliEnergyDopplerSum)){daliEnergyDopplerSum=0.0;}
+
+  Int_t crystalMultDali2=0;
+  Int_t dali2_crystalFired[NUMBEROFDALI2ADDBACKCRYSTALS] = {-1};
+
+
   //cout << endl;
   for(Int_t d=0; d<NUMBEROFDALI2CRYSTALS; d++){
     
@@ -1055,7 +1139,13 @@ void Analysis::AnalysisDali(){
       
       // smear with energy resolution; todo: do this in sim already
       daliEnergy[d] = daliCrystalEnergy[d];
+      
       // todo: dali threshold here
+      if(daliEnergy[d]>0.001){
+        dali2_crystalFired[crystalMultDali2] = d;
+        crystalMultDali2++;
+      }
+
 
 
       // for doppler correction:
@@ -1073,11 +1163,81 @@ void Analysis::AnalysisDali(){
       Float_t df = gammaProj * (1.0 - (betaProj * TMath::Cos(daliTheta)));
       daliEnergyDoppler[d] = daliEnergy[d] * df;
 
+      daliEnergyDopplerSum+=daliEnergyDoppler[d];
+
     }
   }
+  daliCrystalMult = crystalMultDali2;
+
+  // do the addback
+  if(daliCrystalMult>=1)  {
+    
+    //daliAddbackMult=1; // there is at least one addback gamma
+
+    for(Int_t i = 0; i<daliCrystalMult; i++)  {  
+      if(daliCrystalUsedForAddback[dali2_crystalFired[i]]==true) {continue;}
+      
+      Float_t dummyEnergy = daliEnergyDoppler[dali2_crystalFired[i]];
+      //float dummyEnergyWithThreshold[11];
+      //for(int ppp=0;ppp<11;ppp++)  {
+      //  dummyEnergyWithThreshold[ppp]= dali2_dopplerEnergy[i];
+      //}
+
+      daliCrystalUsedForAddback[dali2_crystalFired[i]]=true; 
+      daliAddbackCrystalMult[daliAddbackMult]++;
+      
+       
+      for(Int_t j = i; j<crystalMultDali2; j++){
+        //if(daliCrystalUsedForAddback[dali2_crystalFired[j]]==false && daliEnergyDoppler[dali2_crystalFired[i]]>0.0){
+        if(daliCrystalUsedForAddback[dali2_crystalFired[j]]==false){
+          for(Int_t k = 0; k<NUMBEROFDALI2ADDBACKCRYSTALS; k++) {
+            if(dali2_crystalFired[j] == daliAddbackTable[dali2_crystalFired[i]][k]){
+      
+              daliCrystalUsedForAddback[dali2_crystalFired[j]]=true;
+              dummyEnergy = dummyEnergy + daliEnergyDoppler[dali2_crystalFired[j]];
+              
+              daliAddbackCrystalMult[daliAddbackMult]++;
+              
+              //for(int ppp=0;ppp<11;ppp++)  {
+              //  if(dali2_dopplerEnergy[i]>=ppp*50&& dali2_dopplerEnergy[j]>=ppp*50) 
+              //    dummyEnergyWithThreshold[ppp] = dummyEnergyWithThreshold[ppp] +  dali2_dopplerEnergy[j];
+              //}
+            }
+          }
+        }
+      }
+      //h_dali2_doppler_addback[0]->Fill(dummyEnergy);
+      
+      
+      daliAddbackEnergyDoppler[daliAddbackMult]=dummyEnergy;
+      daliAddbackMult++;
+      
+      ////for(int ppp=0;ppp<11;ppp++)  {
+      ////  h_doppler_addback_with_threshold[0][ppp]->Fill(dummyEnergyWithThreshold[ppp]);
+      ////}
+      //if(posThatsItDali2[2]<0) {
+      //  h_dali2_doppler_addback[1]->Fill(dummyEnergy);
+      //}
+      //else {
+      //  h_dali2_doppler_addback[2]->Fill(dummyEnergy);
+      //}   
+    }
+  } // end of addback
+
 }
 
 
+Bool_t Analysis::IncludeAddbackTable(Float_t det[3][2])  {
+
+  Float_t distance = TMath::Sqrt(TMath::Power(det[0][0]-det[0][1],2) +
+                                 TMath::Power(det[1][0]-det[1][1],2) + 
+                                 TMath::Power(det[2][0]-det[2][1],2));
+
+  //cout<<"Distance: "<<distance<<endl;
+  cout<<distance<<endl;
+  if( (distance > maxAddbackDistance) || (distance < 0.001) ) return false; // 'maxAddbackDistance' defined in /home/philipp/sim/troja/include/DaliGlobals.hh
+  else return true;
+} //end of IncludeAddbackTable
 
 
 

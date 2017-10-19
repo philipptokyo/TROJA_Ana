@@ -37,6 +37,9 @@ class InputInfo
   Int_t fNumberOfStates;
   //Float_t fMaxExEnergy;
   Float_t fStateEnergy[maxNumberOfStates+1]; // index 0 is elastic
+  Int_t   fStateGammaMul[maxNumberOfStates+1]; // [state][energy]
+  Float_t fStateGammaEnergies[maxNumberOfStates+1][maxNumberOfStates+1]; // [state][energy]
+  Float_t fStateSpecFact[maxNumberOfStates+1]; // spectroscopic factors
   Float_t fBeamEnergy;
   Float_t fAngleMin, fAngleMax; // minimum and maximum angle in CM
   Float_t fElasticDownscale;

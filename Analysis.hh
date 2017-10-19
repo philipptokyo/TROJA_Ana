@@ -13,7 +13,8 @@
 
 // maxCutType defined in InputInfo.hh
 #define maxCuts 10 // per cut file 
-#define maxGammaMulGen 2
+//#define maxGammaMulGen 2
+#define maxGammaMulGen maxNumberOfStates+1 // defined in InputInfo.hh
 
 class Analysis
 {
@@ -29,6 +30,7 @@ class Analysis
     void MissingMass(Int_t channel);
     void AnalysisGrape();
     void AnalysisDali();
+    Bool_t IncludeAddbackTable(Float_t det[3][2]);
 
     Analysis(InputInfo *i, DetectorInfo* d);
     
@@ -141,11 +143,16 @@ class Analysis
 
     Float_t  daliEnergy[NUMBEROFDALI2CRYSTALS]; // with resolution
     Float_t  daliEnergyDoppler[NUMBEROFDALI2CRYSTALS]; // with resolution, doppler corrected
+    Float_t  daliEnergyDopplerSum; // with resolution, doppler corrected, than summed
 
-    Int_t    daliAddbackMult;
-    Bool_t   daliAddbackFlag[NUMBEROFDALI2CRYSTALS];
-    Float_t  daliAddbackEnergy[NUMBEROFDALI2CRYSTALS]; // addbacked, ith resolution
-    Float_t  daliAddbackEnergyDoppler[NUMBEROFDALI2CRYSTALS]; // addbacked, with resolution, doppler corrected
+    Int_t    daliAddbackMult; // how many gammas after addback
+    Int_t    daliAddbackCrystalMult[NUMBEROFDALI2ADDBACKCRYSTALS]; // how many crystals used for addback of one gamma
+    Bool_t   daliAddbackFlag[NUMBEROFDALI2ADDBACKCRYSTALS];
+    Float_t  daliAddbackEnergy[NUMBEROFDALI2ADDBACKCRYSTALS]; // addbacked, ith resolution
+    Float_t  daliAddbackEnergyDoppler[NUMBEROFDALI2ADDBACKCRYSTALS]; // addbacked, with resolution, doppler corrected
+    Bool_t   daliCrystalUsedForAddback[NUMBEROFDALI2ADDBACKCRYSTALS];
+
+    Int_t daliAddbackTable[NUMBEROFDALI2CRYSTALS][NUMBEROFDALI2ADDBACKCRYSTALS];
 
 
     Bool_t cutExists[maxCutType][maxCuts];
