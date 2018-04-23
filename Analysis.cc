@@ -1,6 +1,8 @@
 #include "Analysis.hh"
 
 #include "Nucleus.hh"
+#include "Compound.hh"
+#include "Reconstruction.hh"
 
 #define warningType maxCutType+1
 
@@ -193,6 +195,8 @@ Bool_t Analysis::Init(){
   projZ = info->fProjZ;
   targA = info->fTargetA;
   targZ = info->fTargetZ;
+
+  MakeSplineEnAfter2EnLoss();
   
   treeBeam = (TTree*)fileBeam->Get("events");
   //TTree* tree=(TTree*)infile->Get("events"); //simulation input
@@ -302,6 +306,13 @@ Bool_t Analysis::Init(){
 
 
   fileAnalysis = new TFile(info->fOutFileNameAnalysis, "recreate");
+  //fEnAfter2EnLoss->Write("EnergyAfter2EnergyLoss");
+  fileAnalysis->mkdir("EnergyAfter2EnergyLoss");
+  fileAnalysis->cd("EnergyAfter2EnergyLoss");
+  for(Int_t s=0; s<maxEnLossSplines; s++){
+    fEnAfter2EnLoss[s]->Write(Form("spline%03dmum", s));
+  }
+  fileAnalysis->cd();
 
   char tmpName[50];
 
@@ -536,6 +547,7 @@ Bool_t Analysis::Init(){
       fprintf(fAddbackTableIn," \n");
     }
     fclose(fAddbackTableIn);
+    printf("Addback table created\n");
   }
 
 
@@ -561,7 +573,34 @@ Bool_t Analysis::Init(){
 } // Init
 
 
-
+void Analysis::MakeSplineEnAfter2EnLoss(){
+  printf("Creating ELoss spline\n");
+  //Nucleus* projectile, Compound* target, double thickness
+  
+  //printf("Creating Compound target and proton\n");
+  Compound* comTarg = new Compound((char*)"DPE");
+  //printf("Compound mass %lf, symbol %s\n", comTarg->GetMass(), comTarg->GetSymbol());
+  char* massFile = (char*)"/home/philipp/programme/makeEvents/mass.dat";
+  Nucleus* prot = new Nucleus(1, 0, massFile); 
+  //printf("Proton: mass %lf, symbol %s\n", prot->GetMass(), prot->GetSymbol());
+  
+  //printf("Creating Reconstruction\n");
+  Double_t thknss = 0.5*0.819*100.0;
+  //printf("Target thickness %lf mg/cm2\n", thknss);
+  Reconstruction* recons = new Reconstruction(prot, comTarg, thknss*2.0); // mg/cm2, Recon takes half
+  //recons->Print(30);
+  for(Int_t s=0; s<maxEnLossSplines; s++){
+    thknss = s/1000.0*0.819*100.0;
+    //thknss = s/1000.0*1.00*100.0;
+    recons->SetTargetThickness(thknss*2.0);
+    fEnAfter2EnLoss[s] = recons->EnergyAfter2EnergyLoss(30.0, 1.0);
+  }
+  
+  //printf("Getting spline\n");
+  //fEnAfter2EnLoss = recons->EnergyAfter2EnergyLoss(30.0, 1.0);
+  
+  printf("Splines created\n");
+}
 
 
 void Analysis::CreateHeader(){
@@ -1001,7 +1040,15 @@ void Analysis::MissingMass(Int_t channel){
   //Double_t enloca=fEnLoss->CalcEnLoss(energyKinLight, (detInfo->GetTargetSize(2)*1000.0/2.0)/TMath::Abs(TMath::Cos(vLight.Theta())), 0);
   //energyKinLight+=enloca;
   
-  energyKinLight=fEnLoss->CalcParticleEnergy(energyKinLightUncorr, (detInfo->GetTargetSize(2)*1000.0/2.0)/TMath::Abs(TMath::Cos(vLight.Theta())), 0);
+  //energyKinLight=fEnLoss->CalcParticleEnergy(energyKinLightUncorr, (detInfo->GetTargetSize(2)*1000.0/2.0)/TMath::Abs(TMath::Cos(vLight.Theta())), 0);
+
+  Int_t pathlength = (Int_t)(detInfo->GetTargetSize(2)*1000.0/2.0)/TMath::Abs(TMath::Cos(vLight.Theta()));
+  //printf("pathlength %d\n", pathlength);
+  if(pathlength >= maxEnLossSplines){
+    printf("No spline for pathlength %d mum available! Increase 'maxEnLossSplines'!\n", pathlength);
+    abort();
+  }
+  energyKinLight += fEnAfter2EnLoss[pathlength]->Eval(energyKinLightUncorr);
 
   //energyKinLight = energyKinLightUncorr+targetEnergyLoss; // hack for testing the code
   
@@ -1234,7 +1281,6 @@ Bool_t Analysis::IncludeAddbackTable(Float_t det[3][2])  {
                                  TMath::Power(det[2][0]-det[2][1],2));
 
   //cout<<"Distance: "<<distance<<endl;
-  cout<<distance<<endl;
   if( (distance > maxAddbackDistance) || (distance < 0.001) ) return false; // 'maxAddbackDistance' defined in /home/philipp/sim/troja/include/DaliGlobals.hh
   else return true;
 } //end of IncludeAddbackTable

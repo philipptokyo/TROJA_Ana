@@ -1,5 +1,7 @@
 #include "Compound.hh"
 
+#define MASSFILE "/home/philipp/analysis/troja/mass.dat"
+
 using namespace std;
 
 Compound::Compound(char* symbol){

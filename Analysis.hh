@@ -15,6 +15,7 @@
 #define maxCuts 10 // per cut file 
 //#define maxGammaMulGen 2
 #define maxGammaMulGen maxNumberOfStates+1 // defined in InputInfo.hh
+#define maxEnLossSplines 1000
 
 class Analysis
 {
@@ -73,6 +74,9 @@ class Analysis
     Double_t genLightEnergy, genLightTheta, genLightThetaCM, genLightPhi;
     Float_t genExcEn;
     Int_t genState;
+    
+    TSpline3* fEnAfter2EnLoss[maxEnLossSplines];
+    void MakeSplineEnAfter2EnLoss();
 
 
     Int_t           eventNumber;
