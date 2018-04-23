@@ -520,7 +520,7 @@ Bool_t Analysis::Init(){
         dummy[1][1] = detInfo->daliHead.fDaliPosY[j];
         dummy[2][1] = detInfo->daliHead.fDaliPosZ[j];
         
-  printf("Distance between %d and %d is ", i, j);
+        //printf("Distance between %d and %d is ", i, j);
         inTable = IncludeAddbackTable(dummy);  
         if(inTable && counter< NUMBEROFDALI2ADDBACKCRYSTALS) {
           fprintf(fAddbackTableIn," %i",j);
