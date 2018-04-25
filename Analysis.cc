@@ -27,8 +27,8 @@ Analysis::Analysis(InputInfo *i, DetectorInfo* d){
     abort();
   }
 
-  fEnLoss = new EnLoss();
-  fEnLoss->CollectData("/home/philipp/analysis/troja/EnLossData/enLoss_tables_p_in_CD2.csv", 0);
+  //fEnLoss = new EnLoss();
+  //fEnLoss->CollectData("/home/philipp/analysis/troja/EnLossData/enLoss_tables_p_in_CD2.csv", 0);
 
   if(detInfo->IncludeDali()){
     for(Int_t i=0; i<NUMBEROFDALI2CRYSTALS; i++){
@@ -578,7 +578,8 @@ void Analysis::MakeSplineEnAfter2EnLoss(){
   //Nucleus* projectile, Compound* target, double thickness
   
   //printf("Creating Compound target and proton\n");
-  Compound* comTarg = new Compound((char*)"DPE");
+  //Compound* comTarg = new Compound((char*)"DPE");
+  Compound* comTarg = new Compound((char*)"CD2");
   //printf("Compound mass %lf, symbol %s\n", comTarg->GetMass(), comTarg->GetSymbol());
   char* massFile = (char*)"/home/philipp/programme/makeEvents/mass.dat";
   Nucleus* prot = new Nucleus(1, 0, massFile); 
@@ -590,9 +591,11 @@ void Analysis::MakeSplineEnAfter2EnLoss(){
   Reconstruction* recons = new Reconstruction(prot, comTarg, thknss*2.0); // mg/cm2, Recon takes half
   //recons->Print(30);
   for(Int_t s=0; s<maxEnLossSplines; s++){
-    thknss = s/1000.0*0.819*100.0;
-    //thknss = s/1000.0*1.00*100.0;
-    recons->SetTargetThickness(thknss*2.0);
+    //thknss = s/1000.0*0.819*100.0; // this should be correct
+    //recons->SetTargetThickness(thknss*2.0);
+    //thknss = s/1000.0*1.00*100.0; // this works somehow better
+    thknss = s/1000.0*0.92*100.0; // this works somehow better
+    recons->SetTargetThickness(thknss);
     fEnAfter2EnLoss[s] = recons->EnergyAfter2EnergyLoss(30.0, 1.0);
   }
   
@@ -1016,7 +1019,6 @@ void Analysis::MissingMass(Int_t channel){
 //    vProj.RotateX(randomizer->Gaus(0.0, (info->fResTargetB)/1000.0));
 //  }
  
-  energyTotLight = energyKinLight+massLight;
 
   TVector3 vLight(simDetectorHitPos[0]-beamX, simDetectorHitPos[1]-beamY, simDetectorHitPos[2]-beamZ); // take beam position into account
   
@@ -1026,8 +1028,6 @@ void Analysis::MissingMass(Int_t channel){
   vLight.RotateX(-beamB/1000.0);
   
   vLight.SetMag(1.0);
-
-  //vLight.SetMagThetaPhi(momentumLight, theta, phi); // without beam position spread
 
   // for the root tree
   thetaLightLab = vLight.Theta(); 
@@ -1043,15 +1043,22 @@ void Analysis::MissingMass(Int_t channel){
   //energyKinLight=fEnLoss->CalcParticleEnergy(energyKinLightUncorr, (detInfo->GetTargetSize(2)*1000.0/2.0)/TMath::Abs(TMath::Cos(vLight.Theta())), 0);
 
   Int_t pathlength = (Int_t)(detInfo->GetTargetSize(2)*1000.0/2.0)/TMath::Abs(TMath::Cos(vLight.Theta()));
-  //printf("pathlength %d\n", pathlength);
+  //Int_t pathlength = (Int_t)(detInfo->GetTargetSize(2)*1000.0/2.0)/TMath::Abs(vLight.CosTheta());
+  //if(pathlength>0) printf("theta %lf, %lf deg,\t pathlength %d\n",vLight.Theta(),vLight.Theta()*180.0/TMath::Pi(), pathlength);
   if(pathlength >= maxEnLossSplines){
     printf("No spline for pathlength %d mum available! Increase 'maxEnLossSplines'!\n", pathlength);
     abort();
   }
   energyKinLight += fEnAfter2EnLoss[pathlength]->Eval(energyKinLightUncorr);
 
-  //energyKinLight = energyKinLightUncorr+targetEnergyLoss; // hack for testing the code
+  // hack for testing the code
+  //energyKinLight = genLightEnergy; 
+  //thetaLightLab = genLightTheta;
+  //vLight.SetMagThetaPhi(1.0, genLightTheta, genLightPhi);
+
+  //energyKinLight = energyKinLightUncorr+targetEnergyLoss; // hack for testing mm 
   
+  energyTotLight = energyKinLight+massLight;
 
   TLorentzVector lLight(vLight, energyTotLight*1000.0);
   //printf("lLight.Mag() %f, ", lLight.Mag());
@@ -1073,11 +1080,11 @@ void Analysis::MissingMass(Int_t channel){
   
   //printf("reco theta lab %f, kin en %f, missing mass %f\n", thetaLightLab, energyKinLight, miss);
 
-  hThetaLab->Fill(thetaLightLab*180.0/TMath::Pi());
-  hThetaCM->Fill(thetaLightCM*180.0/TMath::Pi());
-
 
   // fill histograms
+
+  hThetaLab->Fill(thetaLightLab*180.0/TMath::Pi());
+  hThetaCM->Fill(thetaLightCM*180.0/TMath::Pi());
 
   hMiss->Fill(miss);
   //hMissTheta->Fill(vLight.Theta()*180.0/TMath::Pi(), miss);

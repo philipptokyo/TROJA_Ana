@@ -15,7 +15,7 @@
 #define maxCuts 10 // per cut file 
 //#define maxGammaMulGen 2
 #define maxGammaMulGen maxNumberOfStates+1 // defined in InputInfo.hh
-#define maxEnLossSplines 1000
+#define maxEnLossSplines 1500
 
 class Analysis
 {

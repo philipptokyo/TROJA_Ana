@@ -28,6 +28,23 @@ Compound::Compound(char* symbol){
     //cout << "fFrac[0] = "<< fFrac[0] << "fFrac[1] = "<< fFrac[1] << endl;
     fMass = fNuclei[0]->GetMass()*4. + fNuclei[1]->GetMass()*2.;
   }
+  else if(strstr(symbol,"CD2")){
+#ifdef debug
+    cout << "CD2!" << endl;
+#endif
+    //D2C1
+    SetNofElements(2);
+    fNuclei = new Nucleus*[2];
+    fFrac = new double[2];
+
+    fNuclei[0] = new Nucleus(1,1,(char*)MASSFILE);
+    fNuclei[1] = new Nucleus(6,6,(char*)MASSFILE);
+
+    fFrac[0] = 2.*fNuclei[0]->GetMass()/(2.*fNuclei[0]->GetMass() + 1.*fNuclei[1]->GetMass());
+    fFrac[1] = 1.*fNuclei[1]->GetMass()/(2.*fNuclei[0]->GetMass() + 1.*fNuclei[1]->GetMass());
+    //cout << "fFrac[0] = "<< fFrac[0] << "fFrac[1] = "<< fFrac[1] << endl;
+    fMass = fNuclei[0]->GetMass()*2. + fNuclei[1]->GetMass()*1.;
+  }
   else if(strstr(symbol,"PE")){
 #ifdef debug
     cout << "Polyethylene!" << endl;
