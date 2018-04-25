@@ -32,7 +32,7 @@ double Reconstruction::StoppingPower(Nucleus* target, double energy, bool gaseou
     z_t = 92;
   double vsq;
   double vovc;
-  double v1ovc;
+  //double v1ovc;
   double factor;  //to convert units from eV/10^15 Atoms/cm^2 to MeV/mg/cm^2
   double a;
   double eps;
@@ -50,7 +50,7 @@ double Reconstruction::StoppingPower(Nucleus* target, double energy, bool gaseou
   if(vovc > 1){
     vovc = 0.999999;
   }
-  v1ovc = 0.0073*pow(z_p, 2./3.);
+  //v1ovc = 0.0073*pow(z_p, 2./3.);
   factor = 0.60225/a_t;
 
   //nuclear stopping powers

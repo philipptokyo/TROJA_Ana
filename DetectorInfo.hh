@@ -52,15 +52,15 @@ typedef struct _daliGeo
 
 } daliGeo;
 
-typedef struct _tar
-{
-
-  string material;
-
-  Double_t center[3];
-  Double_t size[3]; 
-
-} tar;
+//typedef struct _tar
+//{
+//
+//  string material;
+//
+//  Double_t center[3];
+//  Double_t size[3]; 
+//
+//} tar;
 
 
 
@@ -205,13 +205,13 @@ Double_t GetResPar(Int_t d, Int_t p) const { return detGeo[d].resPar[p] ;}
 void SetResPar(Int_t d, Int_t p, Double_t v) { detGeo[d].resPar[p]=v ;}
    
 
-   void SetTargetPosition(Double_t x, Double_t y, Double_t z) {fTarget.center[0]=x; fTarget.center[1]=y; fTarget.center[2]=z; }
-   void SetTargetSize(Double_t x, Double_t y, Double_t z) {fTarget.size[0]=x; fTarget.size[1]=y; fTarget.size[2]=z; }
-   void SetTargetMaterial(string mat) {fTarget.material=mat; }
-   
-   Double_t GetTargetPosition(Int_t i) {return fTarget.center[i]; }
-       Double_t GetTargetSize(Int_t i) {return fTarget.size[i]; }
-            string GetTargetMaterial() {return fTarget.material; }
+//   void SetTargetPosition(Double_t x, Double_t y, Double_t z) {fTarget.center[0]=x; fTarget.center[1]=y; fTarget.center[2]=z; }
+//   void SetTargetSize(Double_t x, Double_t y, Double_t z) {fTarget.size[0]=x; fTarget.size[1]=y; fTarget.size[2]=z; }
+//   void SetTargetMaterial(string mat) {fTarget.material=mat; }
+//   
+//   Double_t GetTargetPosition(Int_t i) {return fTarget.center[i]; }
+//       Double_t GetTargetSize(Int_t i) {return fTarget.size[i]; }
+//            string GetTargetMaterial() {return fTarget.material; }
    
    void SetPosDet(Int_t id, Bool_t stat) {fPosDet[id] = stat;}
    Bool_t IsPosDet(Int_t id) {return fPosDet[id];}
@@ -230,7 +230,7 @@ void SetResPar(Int_t d, Int_t p, Double_t v) { detGeo[d].resPar[p]=v ;}
 
     geo detGeo[maxDetectors];
 
-    tar fTarget;
+    //tar fTarget;
 
     Int_t fNoOfDet; // number of detectors
 

@@ -57,6 +57,13 @@ InputInfo::InputInfo(){
   //fResDet1E  =0.0;   
   //fResDet2E  =0.0;   
   fResBeamE  =0.0;   
+
+  SetTargetMaterial("G4_Galactic");
+  SetTargetPosition(0.0, 0.0, 0.0);
+  SetTargetSize(60, 60, 0.001);
+  SetTargetDensity(0.90);
+  SetTargetDensityOffset(0.02);
+
 }
 
 InputInfo::~InputInfo(){
@@ -229,6 +236,23 @@ void InputInfo::parse(char filename[100]){
         cout << "State " << s << " with spectroscopic factor " << fStateSpecFact[s] << ", ";
       }
       cout << endl;
+    }
+    else if(strcmp(temp[0],"target")==0){
+      fTarget.material = temp[1];
+
+      fTarget.center[0] = atof(temp[2]);
+      fTarget.center[1] = atof(temp[3]);
+      fTarget.center[2] = atof(temp[4]);
+
+      fTarget.size[0] = atof(temp[5]);
+      fTarget.size[1] = atof(temp[6]);
+      fTarget.size[2] = atof(temp[7]);
+      
+      fTarget.density = atof(temp[8]);
+      fTarget.densityOffset = atof(temp[9]);
+
+      printf("Got target material '%s', center x %f mm, y %f mm, z %f mm, full size x %f mm, y %f mm, z %f mm, Density %f mg/cm3, Density Offset %f mg.cm3\n", fTarget.material.c_str(), fTarget.center[0], fTarget.center[1], fTarget.center[2], fTarget.size[0], fTarget.size[1], fTarget.size[2], fTarget.density, fTarget.densityOffset);
+
     }
     //else if(strcmp(temp[0],"beam_energy_range")==0){
     //        fBeamEnergyRange[0]=atof(temp[1]);

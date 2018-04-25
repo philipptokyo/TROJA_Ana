@@ -6,6 +6,22 @@
 #define maxNumberOfStates 20
 #define maxCutType 3
 
+using namespace std;
+
+typedef struct _tar
+{
+  
+  string material;
+  Double_t density;
+  Double_t densityOffset;
+  
+  Double_t center[3];
+  Double_t size[3];
+
+} tar;
+
+
+
 class InputInfo
 {
   public:
@@ -68,7 +84,20 @@ class InputInfo
   //Float_t fResDet1E; // energy (loss) resolution in first detector
   //Float_t fResDet2E; // energy (loss) resolution in second detector
   Float_t fResBeamE;
-  
+
+
+  void SetTargetPosition(Double_t x, Double_t y, Double_t z) {fTarget.center[0]=x; fTarget.center[1]=y; fTarget.center[2]=z; }
+   void SetTargetSize(Double_t x, Double_t y, Double_t z) {fTarget.size[0]=x; fTarget.size[1]=y; fTarget.size[2]=z; }
+   void SetTargetMaterial(string mat) {fTarget.material=mat; }
+   void SetTargetDensity(Double_t den) {fTarget.density=den;}
+   void SetTargetDensityOffset(Double_t deno) {fTarget.densityOffset=deno;}
+
+   Double_t GetTargetPosition(Int_t i) {return fTarget.center[i]; }
+       Double_t GetTargetSize(Int_t i) {return fTarget.size[i]; }
+           Double_t GetTargetDensity() {return fTarget.density; }
+     Double_t GetTargetDensityOffset() {return fTarget.densityOffset; }
+            string GetTargetMaterial() {return fTarget.material; }
+
   
   //
   void parse(char filename[100]);
@@ -91,6 +120,8 @@ class InputInfo
   Bool_t fIncludeElastic; 
   Bool_t fSource;
   Bool_t fAddGammas;
+
+  tar fTarget;
   
   	
   

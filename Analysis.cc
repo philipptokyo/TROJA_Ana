@@ -6,6 +6,7 @@
 
 #define warningType maxCutType+1
 
+char* massFile = (char*)"/home/philipp/programme/makeEvents/mass.dat";
 
 Analysis::Analysis(InputInfo *i, DetectorInfo* d){
   
@@ -106,6 +107,7 @@ void Analysis::ResetVariables(){
   thetaLightLab=0.0;
   thetaLightCM=0.0;
   phiLight=0.0;
+  anaVertexBeamE=0.0;
   miss=NAN;
 
   //energyGamma=0.0;
@@ -196,7 +198,17 @@ Bool_t Analysis::Init(){
   targA = info->fTargetA;
   targZ = info->fTargetZ;
 
+  // Energy Loss Stuff
+  // ELoss of protons to center of target
   MakeSplineEnAfter2EnLoss();
+
+  // ELoss of beam to center of target
+  Nucleus* proj = new Nucleus(projZ, projA-projZ, massFile);
+  Compound* comTarg = new Compound((char*)"CD2");
+  mm2mgcm = info->GetTargetDensity()*100.0;
+  recons = new Reconstruction(proj, comTarg, info->GetTargetSize(2)/2.0* mm2mgcm); // mg/cm2, Recon takes half
+
+
   
   treeBeam = (TTree*)fileBeam->Get("events");
   //TTree* tree=(TTree*)infile->Get("events"); //simulation input
@@ -257,6 +269,8 @@ Bool_t Analysis::Init(){
   treeBeam->SetBranchAddress("beamB", &beamB);
   treeBeam->SetBranchAddress("beamTheta", &beamTheta);
   treeBeam->SetBranchAddress("beamPhi", &beamPhi);
+  treeBeam->SetBranchAddress("vertex", vertex);
+  treeBeam->SetBranchAddress("vertexBeamE", &vertexBeamE);
   treeBeam->SetBranchAddress("state", &genState);
   treeBeam->SetBranchAddress("excitationEnergy", &genExcEn);
   
@@ -360,6 +374,8 @@ Bool_t Analysis::Init(){
     treeAnalysis2[f]->Branch("genBeamEnergy", &energyKinProj, "genBeamEnergy/F");
     treeAnalysis2[f]->Branch("genBeamTheta", &beamTheta, "genBeamTheta/F");
     treeAnalysis2[f]->Branch("genBeamPhi", &beamPhi, "genBeamPhi/F");
+    treeAnalysis2[f]->Branch("genVertex", vertex, "genVertex[3]/F");
+    treeAnalysis2[f]->Branch("genVertexBeamE", &vertexBeamE, "genVertexBeamE/F");
     treeAnalysis2[f]->Branch("genExcEn", &genExcEn, "genExcEn/F");
     treeAnalysis2[f]->Branch("genState", &genState, "genState/I");
 
@@ -408,6 +424,7 @@ Bool_t Analysis::Init(){
 
     treeAnalysis2[f]->Branch("anaType", &type, "anaType/I");
     
+    treeAnalysis2[f]->Branch("anaVertexBeamE", &anaVertexBeamE, "anaVertexBeamE/D");
     treeAnalysis2[f]->Branch("anaMissingMass", &miss, "anaMissingMass/D");
     //treeAnalysis2[f]->Branch("anaProjGamma", &gammaProj, "anaProjGamma/F");
     //treeAnalysis2[f]->Branch("anaProjTotalEnergy", &energyTotProj, "anaProjTotalEnergy/F");
@@ -581,26 +598,25 @@ void Analysis::MakeSplineEnAfter2EnLoss(){
   //Compound* comTarg = new Compound((char*)"DPE");
   Compound* comTarg = new Compound((char*)"CD2");
   //printf("Compound mass %lf, symbol %s\n", comTarg->GetMass(), comTarg->GetSymbol());
-  char* massFile = (char*)"/home/philipp/programme/makeEvents/mass.dat";
   Nucleus* prot = new Nucleus(1, 0, massFile); 
   //printf("Proton: mass %lf, symbol %s\n", prot->GetMass(), prot->GetSymbol());
   
   //printf("Creating Reconstruction\n");
   Double_t thknss = 0.5*0.819*100.0;
   //printf("Target thickness %lf mg/cm2\n", thknss);
-  Reconstruction* recons = new Reconstruction(prot, comTarg, thknss*2.0); // mg/cm2, Recon takes half
-  //recons->Print(30);
+  Reconstruction* reconsTemp = new Reconstruction(prot, comTarg, thknss*2.0); // mg/cm2, Recon takes half
+  //reconsTemp->Print(30);
   for(Int_t s=0; s<maxEnLossSplines; s++){
     //thknss = s/1000.0*0.819*100.0; // this should be correct
-    //recons->SetTargetThickness(thknss*2.0);
+    //reconsTemp->SetTargetThickness(thknss*2.0);
     //thknss = s/1000.0*1.00*100.0; // this works somehow better
     thknss = s/1000.0*0.92*100.0; // this works somehow better
-    recons->SetTargetThickness(thknss);
-    fEnAfter2EnLoss[s] = recons->EnergyAfter2EnergyLoss(30.0, 1.0);
+    reconsTemp->SetTargetThickness(thknss);
+    fEnAfter2EnLoss[s] = reconsTemp->EnergyAfter2EnergyLoss(30.0, 1.0);
   }
   
   //printf("Getting spline\n");
-  //fEnAfter2EnLoss = recons->EnergyAfter2EnergyLoss(30.0, 1.0);
+  //fEnAfter2EnLoss = reconsTemp->EnergyAfter2EnergyLoss(30.0, 1.0);
   
   printf("Splines created\n");
 }
@@ -1009,6 +1025,16 @@ void Analysis::MissingMass(Int_t channel){
   }
 
 
+  // correct for energy loss of beam in target
+  Double_t effThick = info->GetTargetSize(2)/2.0/TMath::Cos(beamTheta);
+
+  recons->SetTargetThickness(effThick*mm2mgcm);
+  anaVertexBeamE=recons->EnergyAfter((double)(energyKinProj), -5)/projA;
+
+
+
+
+
    
 //  TVector3 vProj(0.0, 0.0, 1.0); 
 //  if(!info->NoBeamTracking()){
@@ -1042,8 +1068,8 @@ void Analysis::MissingMass(Int_t channel){
   
   //energyKinLight=fEnLoss->CalcParticleEnergy(energyKinLightUncorr, (detInfo->GetTargetSize(2)*1000.0/2.0)/TMath::Abs(TMath::Cos(vLight.Theta())), 0);
 
-  Int_t pathlength = (Int_t)(detInfo->GetTargetSize(2)*1000.0/2.0)/TMath::Abs(TMath::Cos(vLight.Theta()));
-  //Int_t pathlength = (Int_t)(detInfo->GetTargetSize(2)*1000.0/2.0)/TMath::Abs(vLight.CosTheta());
+  //Int_t pathlength = (Int_t)(detInfo->GetTargetSize(2)*1000.0/2.0)/TMath::Abs(TMath::Cos(vLight.Theta()));
+  Int_t pathlength = (Int_t)(info->GetTargetSize(2)*1000.0/2.0)/TMath::Abs(vLight.CosTheta());
   //if(pathlength>0) printf("theta %lf, %lf deg,\t pathlength %d\n",vLight.Theta(),vLight.Theta()*180.0/TMath::Pi(), pathlength);
   if(pathlength >= maxEnLossSplines){
     printf("No spline for pathlength %d mum available! Increase 'maxEnLossSplines'!\n", pathlength);
@@ -1060,6 +1086,7 @@ void Analysis::MissingMass(Int_t channel){
   
   energyTotLight = energyKinLight+massLight;
 
+
   TLorentzVector lLight(vLight, energyTotLight*1000.0);
   //printf("lLight.Mag() %f, ", lLight.Mag());
   if(lLight.Mag()>0){
@@ -1067,7 +1094,8 @@ void Analysis::MissingMass(Int_t channel){
   }
 
   //Kinematics* kine = new Kinematics(nucProj, nucTarg, energyKinProj);
-  Kinematics* kine = new Kinematics(nucProj, nucTarg, nucReco[channel], nucEjec[channel], energyKinProj, 0.0);
+  //Kinematics* kine = new Kinematics(nucProj, nucTarg, nucReco[channel], nucEjec[channel], energyKinProj, 0.0);
+  Kinematics* kine = new Kinematics(nucProj, nucTarg, nucReco[channel], nucEjec[channel], anaVertexBeamE*projA, 0.0);
   //printf("proj %s, targ %s, reco %s, ejec %s, ", nucProj->GetSymbol(), nucTarg->GetSymbol(), nucReco[channel]->GetSymbol(), nucEjec[channel]->GetSymbol());
   //printf("energy kin proj %f ", energyKinProj);
   

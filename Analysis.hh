@@ -10,6 +10,7 @@
 #include "Nucleus.hh"
 #include "Kinematics.hh"
 #include "EnLoss.hh"
+#include "Reconstruction.hh"
 
 // maxCutType defined in InputInfo.hh
 #define maxCuts 10 // per cut file 
@@ -66,12 +67,16 @@ class Analysis
     Nucleus* nucTarg;
     Nucleus* nucEjec[maxCutType];
     Nucleus* nucReco[maxCutType];
+    Double_t mm2mgcm;
+    Reconstruction* recons; // for beam in target
 
     Float_t energyKinProj;  
     Float_t beamX, beamY, beamZ;
     Float_t beamA, beamB;
     Float_t beamTheta, beamPhi;
     Double_t genLightEnergy, genLightTheta, genLightThetaCM, genLightPhi;
+    Float_t vertex[3];
+    Float_t vertexBeamE;
     Float_t genExcEn;
     Int_t genState;
     
@@ -110,6 +115,7 @@ class Analysis
     Double_t momentumProj, momentumLight;
     Double_t simDetectorHitPos[3]; // x, y, z; position used for analysis
     Double_t thetaLightLab, thetaLightCM, phiLight;
+    Double_t anaVertexBeamE;
     Double_t miss;
     
     //Double_t energyGamma;
