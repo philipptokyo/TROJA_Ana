@@ -215,8 +215,20 @@ void SetResPar(Int_t d, Int_t p, Double_t v) { detGeo[d].resPar[p]=v ;}
    
    void SetPosDet(Int_t id, Bool_t stat) {fPosDet[id] = stat;}
    Bool_t IsPosDet(Int_t id) {return fPosDet[id];}
+
+   void SetShieldingID(Int_t id, Bool_t stat) {fShield[id] = stat;}
+   Bool_t IsShielding(Int_t id) {return fShield[id];}
+
+   void SetShieldingSimple(string mat, Double_t thick, Double_t thet, Double_t dens) {SetShieldingSimple(mat, thick, thet); fShieldSimpleDensity=dens;}
    
-   
+   void SetShieldingSimple(string mat, Double_t thick, Double_t thet) {fShieldSimpleMat=mat;
+                                                                       fShieldSimpleThickness=thick;
+                                                                       fShieldSimpleTheta=thet;}
+   Bool_t HaveShieldingSimple() {return fShieldSimple;} 
+   string GetShieldingSimpleMaterial() {return fShieldSimpleMat;}
+   Double_t GetShieldingSimpleThickness() {return fShieldSimpleThickness;}
+   Double_t GetShieldingSimpleTheta() {return fShieldSimpleTheta;} 
+   Double_t GetShieldingSimpleDensity() {return fShieldSimpleDensity;} 
    
    
     
@@ -243,6 +255,15 @@ void SetResPar(Int_t d, Int_t p, Double_t v) { detGeo[d].resPar[p]=v ;}
 
     //Int_t fNoPosDets;
     Bool_t fPosDet[maxDetectors]; 
+    
+    
+    Bool_t fShield[maxDetectors];
+
+    Bool_t fShieldSimple;
+    string fShieldSimpleMat;
+    Double_t fShieldSimpleThickness;
+    Double_t fShieldSimpleTheta;
+    Double_t fShieldSimpleDensity;
 
 
 };

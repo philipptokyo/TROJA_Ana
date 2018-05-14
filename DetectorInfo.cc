@@ -42,7 +42,10 @@ DetectorInfo::DetectorInfo()
 
   for(Int_t d=0; d<GetMaxNoDetectors(); d++){
     fPosDet[d] = false;
+    fShield[d] = false;
   }
+
+  fShieldSimple=false;
   
 }
 
@@ -79,6 +82,10 @@ void DetectorInfo::ClearGeometry()
 //    }
       SetResType(d, 0);
   }
+
+  fShieldSimpleThickness=0.0;
+  fShieldSimpleTheta=TMath::Pi()/2.0;
+  fShieldSimpleDensity=0.0;
 
 }
 
@@ -471,6 +478,27 @@ void DetectorInfo::Parse(string filename)
         }
       }
       printf("\n");
+    }
+    else if(strcmp(temp[0],"shielding_material")==0){
+      printf("Setting passive shielding material: ");
+      for(Int_t d=1; d<maxArg; d++){
+        string tmpstr = temp[d];
+        if(tmpstr.size()>0){
+          Int_t pdi=atoi(tmpstr.c_str());
+          printf("%d ", pdi);
+          SetShieldingID(pdi, true);
+        }
+      }
+      printf("\n");
+    }
+    else if(strcmp(temp[0],"shielding_simple")==0){
+      printf("Setting simplified shielding (for analyzer): ");
+      fShieldSimple = true;
+      fShieldSimpleMat = temp[1];
+      fShieldSimpleThickness = atof(temp[2]);
+      fShieldSimpleTheta = atof(temp[3])/180.0*TMath::Pi();
+      fShieldSimpleDensity = atof(temp[4]);
+      printf("Simplified shielding material %s, thickness %lf mm, theta %lf rad, density %lf mg/cm3\n", fShieldSimpleMat.c_str(), fShieldSimpleThickness, fShieldSimpleTheta, fShieldSimpleDensity);
 
     }
     else if(strcmp(temp[0],"include_dali")==0){

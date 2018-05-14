@@ -16,7 +16,7 @@
 #define maxCuts 10 // per cut file 
 //#define maxGammaMulGen 2
 #define maxGammaMulGen maxNumberOfStates+1 // defined in InputInfo.hh
-#define maxEnLossSplines 1500
+#define maxEnLossSplines 1000
 
 class Analysis
 {
@@ -67,8 +67,13 @@ class Analysis
     Nucleus* nucTarg;
     Nucleus* nucEjec[maxCutType];
     Nucleus* nucReco[maxCutType];
-    Double_t mm2mgcm;
-    Reconstruction* recons; // for beam in target
+    Compound* comTarg;
+    Compound* comShield;
+    Double_t mm2mgcmT;
+    Double_t mm2mgcmS;
+    Reconstruction* reconsBiT; // for beam in target
+    Reconstruction* reconsRiT[maxCutType]; // for recoiling in target
+    Reconstruction* reconsRiS[maxCutType]; // for recoiling in shielding
 
     Float_t energyKinProj;  
     Float_t beamX, beamY, beamZ;
@@ -80,8 +85,10 @@ class Analysis
     Float_t genExcEn;
     Int_t genState;
     
-    TSpline3* fEnAfter2EnLoss[maxEnLossSplines];
-    void MakeSplineEnAfter2EnLoss();
+    Double_t stepsizeRiT, stepsizeRiS;
+    TSpline3* fEnAfter2EnLossRiT[maxCutType][maxEnLossSplines]; // for recoiling in target
+    TSpline3* fEnAfter2EnLossRiS[maxCutType][maxEnLossSplines]; // for recoiling in shielding
+    void MakeSplineEnAfter2EnLoss(Int_t channel, Int_t matID, Double_t stepsize);
 
 
     Int_t           eventNumber;

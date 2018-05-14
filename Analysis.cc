@@ -193,22 +193,7 @@ Bool_t Analysis::Init(){
    return false;
   }
 
-  projA = info->fProjA;
-  projZ = info->fProjZ;
-  targA = info->fTargetA;
-  targZ = info->fTargetZ;
-
-  // Energy Loss Stuff
-  // ELoss of protons to center of target
-  MakeSplineEnAfter2EnLoss();
-
-  // ELoss of beam to center of target
-  Nucleus* proj = new Nucleus(projZ, projA-projZ, massFile);
-  Compound* comTarg = new Compound((char*)"CD2");
-  mm2mgcm = info->GetTargetDensity()*100.0;
-  recons = new Reconstruction(proj, comTarg, info->GetTargetSize(2)/2.0* mm2mgcm); // mg/cm2, Recon takes half
-
-
+  
   
   treeBeam = (TTree*)fileBeam->Get("events");
   //TTree* tree=(TTree*)infile->Get("events"); //simulation input
@@ -223,7 +208,7 @@ Bool_t Analysis::Init(){
   infile = TFile::Open(info->fOutFileNameTroja,"read");
 
   if(!infile){
-   cout << "geant (troja) root file not found!" << endl;
+   cout << "Geant (troja) root file not found!" << endl;
    return false;
   }
 
@@ -320,13 +305,6 @@ Bool_t Analysis::Init(){
 
 
   fileAnalysis = new TFile(info->fOutFileNameAnalysis, "recreate");
-  //fEnAfter2EnLoss->Write("EnergyAfter2EnergyLoss");
-  fileAnalysis->mkdir("EnergyAfter2EnergyLoss");
-  fileAnalysis->cd("EnergyAfter2EnergyLoss");
-  for(Int_t s=0; s<maxEnLossSplines; s++){
-    fEnAfter2EnLoss[s]->Write(Form("spline%03dmum", s));
-  }
-  fileAnalysis->cd();
 
   char tmpName[50];
 
@@ -590,29 +568,39 @@ Bool_t Analysis::Init(){
 } // Init
 
 
-void Analysis::MakeSplineEnAfter2EnLoss(){
-  printf("Creating ELoss spline\n");
-  //Nucleus* projectile, Compound* target, double thickness
+void Analysis::MakeSplineEnAfter2EnLoss(Int_t channel, Int_t matID, Double_t stepsize){
+  // matID 0 is target
+  // matID 1 is shielding
+  //
+  // stepsize in mm
+  printf("Creating ELoss splines for channel %d, %s\n", channel, nucReco[channel]->GetSymbol());
+
+  Double_t densi;
+  if(matID==0){
+    densi=mm2mgcmT;
+  }else if(matID==1){
+    densi=mm2mgcmS;
+  }else{
+    printf("Unknown material ID. Cannot create splines!\n");
+    abort();
+  }
   
-  //printf("Creating Compound target and proton\n");
-  //Compound* comTarg = new Compound((char*)"DPE");
-  Compound* comTarg = new Compound((char*)"CD2");
-  //printf("Compound mass %lf, symbol %s\n", comTarg->GetMass(), comTarg->GetSymbol());
-  Nucleus* prot = new Nucleus(1, 0, massFile); 
-  //printf("Proton: mass %lf, symbol %s\n", prot->GetMass(), prot->GetSymbol());
-  
-  //printf("Creating Reconstruction\n");
-  Double_t thknss = 0.5*0.819*100.0;
-  //printf("Target thickness %lf mg/cm2\n", thknss);
-  Reconstruction* reconsTemp = new Reconstruction(prot, comTarg, thknss*2.0); // mg/cm2, Recon takes half
-  //reconsTemp->Print(30);
+  Double_t thknss = 1.0;
   for(Int_t s=0; s<maxEnLossSplines; s++){
     //thknss = s/1000.0*0.819*100.0; // this should be correct
     //reconsTemp->SetTargetThickness(thknss*2.0);
     //thknss = s/1000.0*1.00*100.0; // this works somehow better
-    thknss = s/1000.0*0.92*100.0; // this works somehow better
-    reconsTemp->SetTargetThickness(thknss);
-    fEnAfter2EnLoss[s] = reconsTemp->EnergyAfter2EnergyLoss(30.0, 1.0);
+    //thknss = s/1000.0*0.92*100.0; // this works somehow better
+    //thknss = s/1000.0*(info->GetTargetDensity()+info->GetTargetDensityOffset())*100.0; // this works somehow better
+    thknss = s*densi*stepsize; // this works somehow better
+    if(matID==0){
+      reconsRiT[channel]->SetTargetThickness(thknss);
+      fEnAfter2EnLossRiT[channel][s] = reconsRiT[channel]->EnergyAfter2EnergyLoss(30.0, 1.0);
+    }
+    if(matID==1){
+      reconsRiS[channel]->SetTargetThickness(thknss);
+      fEnAfter2EnLossRiS[channel][s] = reconsRiS[channel]->EnergyAfter2EnergyLoss(30.0, 1.0);
+    }
   }
   
   //printf("Getting spline\n");
@@ -639,6 +627,18 @@ void Analysis::CreateHeader(){
   
   nucProj = new Nucleus(projZ, projA-projZ, massFile);
   nucTarg = new Nucleus(targZ, targA-targZ, massFile);
+  comTarg = new Compound((char*)info->GetTargetMaterial().c_str());
+  
+  mm2mgcmT = info->GetTargetDensity()*100.0;
+  reconsBiT = new Reconstruction(nucProj, comTarg, 1.0); // mg/cm2, Recon takes half
+  
+  if(detInfo->HaveShieldingSimple()){
+    comShield = new Compound((char*)detInfo->GetShieldingSimpleMaterial().c_str());
+    mm2mgcmS = detInfo->GetShieldingSimpleDensity()*100.0;
+  }
+
+  stepsizeRiT=0.001;
+  stepsizeRiS=0.0001;
   
   massProj = nucProj->GetMass();
   massTarget = nucTarg->GetMass(); 
@@ -668,6 +668,8 @@ void Analysis::CreateHeader(){
       }
     }
     
+    if(recoA<1) continue;
+
     nucReco[f] = new Nucleus(recoZ, recoA-recoZ, massFile);
     nucEjec[f] = new Nucleus(ejecZ, ejecA-ejecZ, massFile);
 
@@ -676,6 +678,11 @@ void Analysis::CreateHeader(){
 
     //qValue = nucProj->GetMass() + nucTarg->GetMass() - nucReco[f]->GetMass() - nucEjec[f]->GetMass() ;
     qValue = massProj + massTarget - massLight - massHeavy; 
+  
+
+    reconsRiT[f] = new Reconstruction(nucReco[f], comTarg, 1.0);
+    reconsRiS[f] = new Reconstruction(nucReco[f], comShield, 1.0);
+
     
     treeAnaHeader[f] = new TTree(Form("treeAnaHeader_channel%d", f), Form("Header, channel %d", f));
 
@@ -695,12 +702,38 @@ void Analysis::CreateHeader(){
 
     treeAnaHeader[f]->Fill();
     treeAnaHeader[f]->Write(Form("anaHeader%d", f));
+  
+  
+    // Energy Loss Stuff
+    // ELoss of beam to center of target
+    //printf("\nCreating target %s\n", info->GetTargetMaterial().c_str());
+    //Nucleus* proj = new Nucleus(projZ, projA-projZ, massFile);
+    //Compound* comTarg = new Compound((char*)"CD2");
+
+    //// ELoss of protons to center of target
+    //Nucleus* prot = new Nucleus(1, 0, massFile);
+    //MakeSplineEnAfter2EnLoss(prot, comTarg, info->GetTargetDensity()+info->GetTargetDensityOffset());
+    
+    MakeSplineEnAfter2EnLoss(f, 0, stepsizeRiT);
+    if(detInfo->HaveShieldingSimple()){
+      MakeSplineEnAfter2EnLoss(f, 1, stepsizeRiS);
+    }
+
+
+  
+    //fileAnalysis->cd();
+    //fileAnalysis->mkdir("EnergyAfter2EnergyLoss");
+    //fileAnalysis->cd("EnergyAfter2EnergyLoss");
+    //for(Int_t s=0; s<maxEnLossSplines; s++){
+    //  fEnAfter2EnLoss[s]->Write(Form("spline%03dmum", s));
+    //}
+    
     
     printf("Wrote for reaction channel/type %d: projectile A/Z %d/%d, target A/Z %d/%d, recoiled A/Z %d/%d, ejectile A/Z %d/%d\n", f, projA,projZ, targA,targZ, recoA,recoZ, ejecA,ejecZ);
     printf("Wrote for reaction channel/type %d: mass projectile %f, mass target %f, mass recoiled %f, mass ejectile %f, q-value %f\n", f, massProj, massTarget, massLight, massHeavy, qValue);
 
 
-  }
+  } // loop over cut types
 
 }
 
@@ -1028,8 +1061,8 @@ void Analysis::MissingMass(Int_t channel){
   // correct for energy loss of beam in target
   Double_t effThick = info->GetTargetSize(2)/2.0/TMath::Cos(beamTheta);
 
-  recons->SetTargetThickness(effThick*mm2mgcm);
-  anaVertexBeamE=recons->EnergyAfter((double)(energyKinProj), -5)/projA;
+  reconsBiT->SetTargetThickness(effThick*mm2mgcmT);
+  anaVertexBeamE=reconsBiT->EnergyAfter((double)(energyKinProj), -5)/projA;
 
 
 
@@ -1069,13 +1102,24 @@ void Analysis::MissingMass(Int_t channel){
   //energyKinLight=fEnLoss->CalcParticleEnergy(energyKinLightUncorr, (detInfo->GetTargetSize(2)*1000.0/2.0)/TMath::Abs(TMath::Cos(vLight.Theta())), 0);
 
   //Int_t pathlength = (Int_t)(detInfo->GetTargetSize(2)*1000.0/2.0)/TMath::Abs(TMath::Cos(vLight.Theta()));
-  Int_t pathlength = (Int_t)(info->GetTargetSize(2)*1000.0/2.0)/TMath::Abs(vLight.CosTheta());
+  Double_t pathlength = (Int_t)(info->GetTargetSize(2)*1000.0/2.0)/TMath::Abs(vLight.CosTheta());
   //if(pathlength>0) printf("theta %lf, %lf deg,\t pathlength %d\n",vLight.Theta(),vLight.Theta()*180.0/TMath::Pi(), pathlength);
-  if(pathlength >= maxEnLossSplines){
-    printf("No spline for pathlength %d mum available! Increase 'maxEnLossSplines'!\n", pathlength);
-    abort();
+  //if(pathlength >= maxEnLossSplines){
+  //  printf("No spline for pathlength %d mum available! Increase 'maxEnLossSplines'!\n", pathlength);
+  //  abort();
+  //}
+  //energyKinLight += fEnAfter2EnLoss[pathlength]->Eval(energyKinLightUncorr);
+
+  // HERE 
+
+  if(detInfo->HaveShieldingSimple()){
+    // correct if shielding exists
+    energyKinLight += fEnAfter2EnLossRiS[channel+maxCutType][(Int_t)(pathlength*stepsizeRiS)]->Eval(energyKinLightUncorr);
+  }else{
+    // no correction
   }
-  energyKinLight += fEnAfter2EnLoss[pathlength]->Eval(energyKinLightUncorr);
+
+  energyKinLight += fEnAfter2EnLossRiT[channel][(Int_t)(pathlength*stepsizeRiT)]->Eval(energyKinLightUncorr); // HERE: proper two step correction!!!
 
   // hack for testing the code
   //energyKinLight = genLightEnergy; 
