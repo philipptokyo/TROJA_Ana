@@ -16,7 +16,7 @@
 #define maxCuts 10 // per cut file 
 //#define maxGammaMulGen 2
 #define maxGammaMulGen maxNumberOfStates+1 // defined in InputInfo.hh
-#define maxEnLossSplines 1000
+#define maxEnLossSplines 10
 
 class Analysis
 {
@@ -86,7 +86,8 @@ class Analysis
     Int_t genState;
     
     Double_t stepsizeRiT, stepsizeRiS;
-    TSpline3* fEnAfter2EnLossRiT[maxCutType][maxEnLossSplines]; // for recoiling in target
+    //TSpline3* fEnAfter2EnLossRiT[maxCutType][maxEnLossSplines]; // for recoiling in target
+    TSpline3* fEnAfter2EnLossRiT[maxCutType]; // for recoiling in target
     TSpline3* fEnAfter2EnLossRiS[maxCutType][maxEnLossSplines]; // for recoiling in shielding
     void MakeSplineEnAfter2EnLoss(Int_t channel, Int_t matID, Double_t stepsize);
 

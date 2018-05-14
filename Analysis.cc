@@ -593,10 +593,11 @@ void Analysis::MakeSplineEnAfter2EnLoss(Int_t channel, Int_t matID, Double_t ste
     //thknss = s/1000.0*0.92*100.0; // this works somehow better
     //thknss = s/1000.0*(info->GetTargetDensity()+info->GetTargetDensityOffset())*100.0; // this works somehow better
     thknss = s*densi*stepsize; // this works somehow better
-    if(matID==0){
-      reconsRiT[channel]->SetTargetThickness(thknss);
-      fEnAfter2EnLossRiT[channel][s] = reconsRiT[channel]->EnergyAfter2EnergyLoss(30.0, 1.0);
-    }
+    //if(matID==0){
+    //  reconsRiT[channel]->SetTargetThickness(thknss);
+    //  fEnAfter2EnLossRiT[channel][s] = reconsRiT[channel]->EnergyAfter2EnergyLoss(30.0, 1.0);
+    //  //printf("Spline for thickness thknss %lf (%lf mum), index %d\n", thknss, s*stepsize*1000.0, s);
+    //}
     if(matID==1){
       reconsRiS[channel]->SetTargetThickness(thknss);
       fEnAfter2EnLossRiS[channel][s] = reconsRiS[channel]->EnergyAfter2EnergyLoss(30.0, 1.0);
@@ -637,7 +638,7 @@ void Analysis::CreateHeader(){
     mm2mgcmS = detInfo->GetShieldingSimpleDensity()*100.0;
   }
 
-  stepsizeRiT=0.001;
+  stepsizeRiT=0.0001;
   stepsizeRiS=0.0001;
   
   massProj = nucProj->GetMass();
@@ -1095,6 +1096,10 @@ void Analysis::MissingMass(Int_t channel){
 
   // energy loss in target, correction
   energyKinLightUncorr=energyKinLight;
+
+
+  // HERE: hard coded threshold
+  if(energyKinLightUncorr<0.4) return;
   
   //Double_t enloca=fEnLoss->CalcEnLoss(energyKinLight, (detInfo->GetTargetSize(2)*1000.0/2.0)/TMath::Abs(TMath::Cos(vLight.Theta())), 0);
   //energyKinLight+=enloca;
@@ -1102,7 +1107,8 @@ void Analysis::MissingMass(Int_t channel){
   //energyKinLight=fEnLoss->CalcParticleEnergy(energyKinLightUncorr, (detInfo->GetTargetSize(2)*1000.0/2.0)/TMath::Abs(TMath::Cos(vLight.Theta())), 0);
 
   //Int_t pathlength = (Int_t)(detInfo->GetTargetSize(2)*1000.0/2.0)/TMath::Abs(TMath::Cos(vLight.Theta()));
-  Double_t pathlength = (Int_t)(info->GetTargetSize(2)*1000.0/2.0)/TMath::Abs(vLight.CosTheta());
+  Double_t pathlength = (info->GetTargetSize(2)*1000.0/2.0)/TMath::Abs(vLight.CosTheta());
+  //Double_t pathlength = (Int_t)(info->GetTargetSize(2)/stepsizeRiT/2.0)/TMath::Abs(vLight.CosTheta());
   //if(pathlength>0) printf("theta %lf, %lf deg,\t pathlength %d\n",vLight.Theta(),vLight.Theta()*180.0/TMath::Pi(), pathlength);
   //if(pathlength >= maxEnLossSplines){
   //  printf("No spline for pathlength %d mum available! Increase 'maxEnLossSplines'!\n", pathlength);
@@ -1111,15 +1117,31 @@ void Analysis::MissingMass(Int_t channel){
   //energyKinLight += fEnAfter2EnLoss[pathlength]->Eval(energyKinLightUncorr);
 
   // HERE 
+  //printf("setting effective target thickness\n");
+  reconsRiT[channel]->SetTargetThickness(pathlength/1000.0*mm2mgcmT);
+  //printf("creating spline\n");
+  //fEnAfter2EnLossRiT[channel] = reconsRiT[channel]->EnergyAfter2EnergyLoss(30.0, 1.0);
+  TSpline3* splinetemp = reconsRiT[channel]->EnergyAfter2EnergyLoss(30.0, 1.0);
 
-  if(detInfo->HaveShieldingSimple()){
-    // correct if shielding exists
-    energyKinLight += fEnAfter2EnLossRiS[channel+maxCutType][(Int_t)(pathlength*stepsizeRiS)]->Eval(energyKinLightUncorr);
-  }else{
-    // no correction
-  }
+//  if(detInfo->HaveShieldingSimple()){
+//    // correct if shielding exists
+//    energyKinLight += fEnAfter2EnLossRiS[channel+maxCutType][(Int_t)(pathlength*stepsizeRiS)]->Eval(energyKinLightUncorr);
+//  }else{
+//    // no correction
+//  }
 
-  energyKinLight += fEnAfter2EnLossRiT[channel][(Int_t)(pathlength*stepsizeRiT)]->Eval(energyKinLightUncorr); // HERE: proper two step correction!!!
+  //printf("correcting energy\n");
+  //Double_t eklcorr = fEnAfter2EnLossRiT[channel][(Int_t)pathlength]->Eval(energyKinLightUncorr);
+  //Double_t eklcorr = fEnAfter2EnLossRiT[channel]->Eval(energyKinLightUncorr);
+  Double_t eklcorr = splinetemp->Eval(energyKinLightUncorr);
+
+  delete splinetemp;
+
+  //energyKinLight += fEnAfter2EnLossRiT[channel][(Int_t)(pathlength*stepsizeRiT)]->Eval(energyKinLightUncorr); // HERE: proper two step correction!!!
+
+  energyKinLight += eklcorr;
+
+  //printf("Ekin uncorr %lf, Ekin %lf, corr %lf, pathlength %lf micron\n", energyKinLightUncorr, energyKinLight, eklcorr, pathlength);
 
   // hack for testing the code
   //energyKinLight = genLightEnergy; 
